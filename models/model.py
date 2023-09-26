@@ -202,6 +202,11 @@ class Transformer(nn.Module):
         self.count = 0
         self.resblocks = nn.Sequential(*[ResidualAttentionBlock(width, heads, attn_mask) for _ in range(layers)])
         # 每个 ResidualAttentionBlock 都会在后面的前向传播中被逐一执行，共执行 layers 次
+        val = math.sqrt(6. / float(3 * reduce(mul, self.patch_embed.patch_size, 1) + self.embed_dim))  # noqa
+        self.prompt_embeddings = nn.Parameter(torch.zeros(
+                    1, self.num_tokens, self.embed_dim), requires_grad=True)
+        nn.init.uniform_(self.prompt_embeddings.data, -val, val)
+
     def forward(self, x: torch.Tensor):
         B = x.size[0]
         if self.count >0:
@@ -263,14 +268,6 @@ class VisualTransformer(nn.Module):
                         self.dropout(self.prompt_embeddings.expand(B,-1,-1)),
                         x[:,1:,:]
             ),dim=1)
-            # self.count += 1
-        # elif self.deep and self.count>0:
-        #     x = torch.cat((
-        #                 x[:, :1, :],
-        #                 self.dropout(self.prompt_embeddings.expand(B, -1, -1)),
-        #                 x[:, 1+self.num_tokens:, :]
-        #             ), dim=1)
-        #     self.count += 1
         x = self.ln_pre(x)
 
         x = x.permute(1, 0, 2)  # NLD -> LND  
