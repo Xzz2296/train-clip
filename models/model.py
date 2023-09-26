@@ -197,9 +197,20 @@ class Transformer(nn.Module):
         super().__init__()
         self.width = width
         self.layers = layers
+        self.num_tokens = 2
+        self.deep = False
+        self.count = 0
         self.resblocks = nn.Sequential(*[ResidualAttentionBlock(width, heads, attn_mask) for _ in range(layers)])
-
+        # 每个 ResidualAttentionBlock 都会在后面的前向传播中被逐一执行，共执行 layers 次
     def forward(self, x: torch.Tensor):
+        B = x.size[0]
+        if self.count >0:
+            x = torch.cat((
+                        x[:, :1, :],
+                        self.dropout(self.prompt_embeddings.expand(B, -1, -1)),
+                        x[:, 1+self.num_tokens:, :]
+                    ), dim=1)
+            self.count += 1
         return self.resblocks(x)
 
 
@@ -232,16 +243,10 @@ class VisualTransformer(nn.Module):
         # 设置require_grad=True,保证这个参数可以被更新
         self.prompt_embeddings = nn.Parameter(torch.zeros(
                     1, num_tokens, self.embed_dim), requires_grad=True)
-        # if not self.deep:
-        #     self.prompt_embeddings = nn.Parameter(torch.zeros(
-        #         1, num_tokens, self.embed_dim))
-        # else :
-        #     self.prompt_embeddings  = nn.Parameter(torch.zeros(
-        #         num_layers, num_tokens, self.embed_dim))
-        # xavier_uniform initialization
         nn.init.uniform_(self.prompt_embeddings.data, -val, val)
 
     def forward(self, x: torch.Tensor):
+        # 输入层的前向传播 ，而不是所有层的前向传播
         x = self.conv1(x)  # shape = [*, width, grid, grid]
         x = x.reshape(x.shape[0], x.shape[1], -1)  # shape = [*, width, grid ** 2]
         x = x.permute(0, 2, 1)  # shape = [*, grid ** 2, width]
@@ -251,20 +256,21 @@ class VisualTransformer(nn.Module):
         # 添加位置信息在 cat拼接之前
         B = x.shape[0]
         # 将CLS PROMPT 和普通token拼接起来，使用的是nn中的dropout
+
         if self.count==0:
             x = torch.cat((
                         x[:,:1,:],
                         self.dropout(self.prompt_embeddings.expand(B,-1,-1)),
                         x[:,1:,:]
             ),dim=1)
-            self.count += 1
-        elif self.deep and self.count>0:
-            x = torch.cat((
-                        x[:, :1, :],
-                        self.dropout(self.prompt_embeddings.expand(B, -1, -1)),
-                        x[:, 1+self.num_tokens:, :]
-                    ), dim=1)
-            self.count += 1
+            # self.count += 1
+        # elif self.deep and self.count>0:
+        #     x = torch.cat((
+        #                 x[:, :1, :],
+        #                 self.dropout(self.prompt_embeddings.expand(B, -1, -1)),
+        #                 x[:, 1+self.num_tokens:, :]
+        #             ), dim=1)
+        #     self.count += 1
         x = self.ln_pre(x)
 
         x = x.permute(1, 0, 2)  # NLD -> LND  
