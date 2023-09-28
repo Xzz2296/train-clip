@@ -14,6 +14,14 @@ def main(hparams):
         hparams.minibatch_size = hparams.batch_size
 
     model = CLIPWrapper(hparams.model_name, config, hparams.minibatch_size)
+    #params =list(model.named_parameters())
+    # 枚举参数名称和 形状
+    for name,param in model.named_parameters():
+        #print(i)
+        print(name)
+        print(param.size())
+    # 共3个参数需要训练：model.visual.prompt_embeddings model.visual.transformer.prompt_embeddings model.visual.class_embedding
+    #print(params)
     # 冻结全部参数
     # for param in model.parameters():
     #     param.requires_grad = False
