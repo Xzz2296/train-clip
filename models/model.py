@@ -200,9 +200,11 @@ class Transformer(nn.Module):
         self.num_tokens = 2
         self.deep = False
         self.count = 0
+        self.patch = 16
+        self.embed_dim =512
         self.resblocks = nn.Sequential(*[ResidualAttentionBlock(width, heads, attn_mask) for _ in range(layers)])
         # 每个 ResidualAttentionBlock 都会在后面的前向传播中被逐一执行，共执行 layers 次
-        val = math.sqrt(6. / float(3 * reduce(mul, self.patch_embed.patch_size, 1) + self.embed_dim))  # noqa
+        val = math.sqrt(6. / float(3 * reduce(mul, [self.patch,self.patch], 1) + self.embed_dim))  # noqa
         self.prompt_embeddings = nn.Parameter(torch.zeros(
                     1, self.num_tokens, self.embed_dim), requires_grad=True)
         nn.init.uniform_(self.prompt_embeddings.data, -val, val)
@@ -242,12 +244,12 @@ class VisualTransformer(nn.Module):
         self.proj = nn.Parameter(scale * torch.randn(width, output_dim))
         # insert Prompt moudle 初始化
         # initiate prompt:
-        val = math.sqrt(6. / float(3 * reduce(mul, self.patch_embed.patch_size, 1) + self.embed_dim))  # noqa
+        val = math.sqrt(6. / float(3 * reduce(mul, [patch_size,patch_size], 1) + output_dim))  # noqa
         num_tokens =self.num_tokens
         # num_layers =self.num_layers
         # 设置require_grad=True,保证这个参数可以被更新
         self.prompt_embeddings = nn.Parameter(torch.zeros(
-                    1, num_tokens, self.embed_dim), requires_grad=True)
+                    1, num_tokens, self.output_dim), requires_grad=True)
         nn.init.uniform_(self.prompt_embeddings.data, -val, val)
 
     def forward(self, x: torch.Tensor):

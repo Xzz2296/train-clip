@@ -22,7 +22,7 @@ def main(hparams):
 
 
     dm = TextImageDataModule.from_argparse_args(hparams)
-    trainer = Trainer.from_argparse_args(hparams, precision=16, max_epochs=32)
+    trainer = Trainer.from_argparse_args(hparams, gpus=[0], precision=16, max_epochs=32)
     # 添加gpus=x参数
     trainer.fit(model, dm)
 
@@ -30,9 +30,10 @@ def main(hparams):
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--model_name', type=str, required=True)
+    parser.add_argument('--batchsize', type=int)
     parser.add_argument('--minibatch_size', type=int, default=0)
+    # parser.add_argument('--gpus', default=0, type=int)
     parser = TextImageDataModule.add_argparse_args(parser)
     parser = Trainer.add_argparse_args(parser)
     args = parser.parse_args()
-
     main(args)
