@@ -1,1 +1,1 @@
-python train.py --model_name ViT-B/16 --folder E:\xpj\dataset\clip\train --batchsize 2
+python train.py --model_name ViT-B/16 --folder E:\xpj\dataset\clip\train --batch_size 2

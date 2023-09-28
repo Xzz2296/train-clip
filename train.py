@@ -30,7 +30,7 @@ def main(hparams):
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--model_name', type=str, required=True)
-    parser.add_argument('--batchsize', type=int)
+    #parser.add_argument('--batchsize', type=int)
     parser.add_argument('--minibatch_size', type=int, default=0)
     # parser.add_argument('--gpus', default=0, type=int)
     parser = TextImageDataModule.add_argparse_args(parser)

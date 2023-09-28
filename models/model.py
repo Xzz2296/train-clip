@@ -201,23 +201,30 @@ class Transformer(nn.Module):
         self.deep = False
         self.count = 0
         self.patch = 16
-        self.embed_dim =512
+        self.embed_dim =768
         self.resblocks = nn.Sequential(*[ResidualAttentionBlock(width, heads, attn_mask) for _ in range(layers)])
+        self.dropout = nn.Dropout(p=0.2)
         # 每个 ResidualAttentionBlock 都会在后面的前向传播中被逐一执行，共执行 layers 次
         val = math.sqrt(6. / float(3 * reduce(mul, [self.patch,self.patch], 1) + self.embed_dim))  # noqa
         self.prompt_embeddings = nn.Parameter(torch.zeros(
                     1, self.num_tokens, self.embed_dim), requires_grad=True)
         nn.init.uniform_(self.prompt_embeddings.data, -val, val)
+        #self.prompt_embeddings =self.prompt_embeddings.permute(1,0,2)
 
     def forward(self, x: torch.Tensor):
-        B = x.size[0]
+        B = x.size()[1] # X[patch ** 2+1, Batch , width]
         if self.count >0:
+            # x = torch.cat((
+            #             x[:, :1, :],
+            #             self.dropout(self.prompt_embeddings.expand(B, -1, -1)),
+            #             x[:, 1+self.num_tokens:, :]
+            #         ), dim=1)
             x = torch.cat((
-                        x[:, :1, :],
-                        self.dropout(self.prompt_embeddings.expand(B, -1, -1)),
-                        x[:, 1+self.num_tokens:, :]
-                    ), dim=1)
-            self.count += 1
+                        x[:1, :, :],
+                        self.dropout(self.prompt_embeddings.expand(-1, B, -1)),
+                        x[1+self.num_tokens:, :, :]
+                    ), dim=0)
+        self.count += 1
         return self.resblocks(x)
 
 
@@ -225,7 +232,7 @@ class VisualTransformer(nn.Module):
     def __init__(self, input_resolution: int, patch_size: int, width: int, layers: int, heads: int, output_dim: int):
         super().__init__()
         self.input_resolution = input_resolution
-        self.output_dim = output_dim
+        self.embedding_dim = 768
         self.conv1 = nn.Conv2d(in_channels=3, out_channels=width, kernel_size=patch_size, stride=patch_size, bias=False)
         # 定义插入的token个数
         self.num_tokens =2
@@ -249,7 +256,7 @@ class VisualTransformer(nn.Module):
         # num_layers =self.num_layers
         # 设置require_grad=True,保证这个参数可以被更新
         self.prompt_embeddings = nn.Parameter(torch.zeros(
-                    1, num_tokens, self.output_dim), requires_grad=True)
+                    1, num_tokens, self.embedding_dim), requires_grad=True)
         nn.init.uniform_(self.prompt_embeddings.data, -val, val)
 
     def forward(self, x: torch.Tensor):
@@ -261,6 +268,7 @@ class VisualTransformer(nn.Module):
         x = torch.cat([self.class_embedding.to(x.dtype) + torch.zeros(x.shape[0], 1, x.shape[-1], dtype=x.dtype, device=x.device), x], dim=1)  # shape = [*, grid ** 2 + 1, width]
         x = x + self.positional_embedding.to(x.dtype)
         # 添加位置信息在 cat拼接之前
+        # B 即batch大小，是开始时输入的参数
         B = x.shape[0]
         # 将CLS PROMPT 和普通token拼接起来，使用的是nn中的dropout
 
