@@ -197,6 +197,42 @@ class Transformer(nn.Module):
         super().__init__()
         self.width = width
         self.layers = layers
+        # self.num_tokens = 2
+        # self.deep = False
+        # self.count = 0
+        # self.patch = 16
+        # self.embed_dim =768
+        self.resblocks = nn.Sequential(*[ResidualAttentionBlock(width, heads, attn_mask) for _ in range(layers)])
+        # self.dropout = nn.Dropout(p=0.2)
+        # # 每个 ResidualAttentionBlock 都会在后面的前向传播中被逐一执行，共执行 layers 次
+        # val = math.sqrt(6. / float(3 * reduce(mul, [self.patch,self.patch], 1) + self.embed_dim))  # noqa
+        # self.prompt_embeddings = nn.Parameter(torch.zeros(
+        #             1, self.num_tokens, self.embed_dim), requires_grad=True)
+        # nn.init.uniform_(self.prompt_embeddings.data, -val, val)
+        #self.prompt_embeddings =self.prompt_embeddings.permute(1,0,2)
+
+    def forward(self, x: torch.Tensor):
+        # 这里不能乱改，CLIP的 text_encoder 使用的也是这个transformer，在微调的过程中只对VIT中的Transformer做调整
+        # B = x.size()[1] # X[patch ** 2+1, Batch , width]
+        # if self.count >0:
+        #     # x = torch.cat((
+        #     #             x[:, :1, :],
+        #     #             self.dropout(self.prompt_embeddings.expand(B, -1, -1)),
+        #     #             x[:, 1+self.num_tokens:, :]
+        #     #         ), dim=1)
+        #     x = torch.cat((
+        #                 x[:1, :, :],
+        #                 self.dropout(self.prompt_embeddings.expand(-1, B, -1)),
+        #                 x[1+self.num_tokens:, :, :]
+        #             ), dim=0)
+        # self.count += 1
+        return self.resblocks(x)
+
+class VTransformer(nn.Module):
+    def __init__(self, width: int, layers: int, heads: int, attn_mask: torch.Tensor = None):
+        super().__init__()
+        self.width = width
+        self.layers = layers
         self.num_tokens = 2
         self.deep = False
         self.count = 0
@@ -209,9 +245,11 @@ class Transformer(nn.Module):
         self.prompt_embeddings = nn.Parameter(torch.zeros(
                     1, self.num_tokens, self.embed_dim), requires_grad=True)
         nn.init.uniform_(self.prompt_embeddings.data, -val, val)
-        #self.prompt_embeddings =self.prompt_embeddings.permute(1,0,2)
+        # self.prompt_embeddings =self.prompt_embeddings.permute(1, 0, 2)
 
     def forward(self, x: torch.Tensor):
+        # 这里不能乱改，CLIP的 text_encoder 使用的也是这个transformer，在微调的过程中只对VIT中的Transformer做调整
+        # 重新定义了一个Transformer_v类，在forward的过程中 加prompt_embedding
         B = x.size()[1] # X[patch ** 2+1, Batch , width]
         if self.count >0:
             # x = torch.cat((
@@ -219,10 +257,11 @@ class Transformer(nn.Module):
             #             self.dropout(self.prompt_embeddings.expand(B, -1, -1)),
             #             x[:, 1+self.num_tokens:, :]
             #         ), dim=1)
+            # deep prompt embedding 还有问题
             x = torch.cat((
                         x[:1, :, :],
                         self.dropout(self.prompt_embeddings.expand(-1, B, -1)),
-                        x[1+self.num_tokens:, :, :]
+                        x[1:, :, :]
                     ), dim=0)
         self.count += 1
         return self.resblocks(x)
@@ -245,7 +284,7 @@ class VisualTransformer(nn.Module):
         self.positional_embedding = nn.Parameter(scale * torch.randn((input_resolution // patch_size) ** 2 + 1, width))
         self.ln_pre = LayerNorm(width)
 
-        self.transformer = Transformer(width, layers, heads)
+        self.transformer = VTransformer(width, layers, heads)
 
         self.ln_post = LayerNorm(width)
         self.proj = nn.Parameter(scale * torch.randn(width, output_dim))
@@ -283,9 +322,9 @@ class VisualTransformer(nn.Module):
         x = x.permute(1, 0, 2)  # NLD -> LND  
         x = self.transformer(x)
         x = x.permute(1, 0, 2)  # LND -> NLD
-
+        # 取分类头 第0个向量
         x = self.ln_post(x[:, 0, :])
-
+        # 做投影
         if self.proj is not None:
             x = x @ self.proj
 
