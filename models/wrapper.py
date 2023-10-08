@@ -326,9 +326,25 @@ class CustomCLIPWrapper(CLIPWrapper):
 
     def configure_optimizers(self):
         lr = self.learning_rate
+        model = self.model
+        no_smaller = ['model.visual.prompt_embeddings', 'model.visual.transformer.prompt_embeddings',
+                      'model.visual.class_embedding']
+        optimizer_grouped_parameters = [
+            {
+                "params": [p for n, p in model.named_parameters() if not any(nd in n for nd in no_smaller)],
+                "lr": 0.000
+                # "weight_decay": args.weight_decay,
+            },
+            {
+                "params": [p for n, p in model.named_parameters() if any(nd in n for nd in no_smaller)],
+                "lr": 0.0001
+            }
+        ]
+
 
         optimizer = torch.optim.SGD(
-            self.parameters(),
+            optimizer_grouped_parameters,
+            # self.parameters(),
             lr=lr,
             momentum=0.9
         )
