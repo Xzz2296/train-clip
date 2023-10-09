@@ -213,19 +213,6 @@ class Transformer(nn.Module):
 
     def forward(self, x: torch.Tensor):
         # 这里不能乱改，CLIP的 text_encoder 使用的也是这个transformer，在微调的过程中只对VIT中的Transformer做调整
-        # B = x.size()[1] # X[patch ** 2+1, Batch , width]
-        # if self.count >0:
-        #     # x = torch.cat((
-        #     #             x[:, :1, :],
-        #     #             self.dropout(self.prompt_embeddings.expand(B, -1, -1)),
-        #     #             x[:, 1+self.num_tokens:, :]
-        #     #         ), dim=1)
-        #     x = torch.cat((
-        #                 x[:1, :, :],
-        #                 self.dropout(self.prompt_embeddings.expand(-1, B, -1)),
-        #                 x[1+self.num_tokens:, :, :]
-        #             ), dim=0)
-        # self.count += 1
         return self.resblocks(x)
 
 class VTransformer(nn.Module):
@@ -251,6 +238,8 @@ class VTransformer(nn.Module):
         # 这里不能乱改，CLIP的 text_encoder 使用的也是这个transformer，在微调的过程中只对VIT中的Transformer做调整
         # 重新定义了一个Transformer_v类，在forward的过程中 加prompt_embedding
         B = x.size()[1] # X[patch ** 2+1, Batch , width]
+        # 将prompt embedding 进行了拓展，第一个维度拓展到batch大小
+        expand_prompt_embeddings = self.prompt_embeddings.expand(B,-1,-1).permute(1,0,2)
         if self.count >0:
             # x = torch.cat((
             #             x[:, :1, :],
@@ -260,7 +249,8 @@ class VTransformer(nn.Module):
             # deep prompt embedding 还有问题
             x = torch.cat((
                         x[:1, :, :],
-                        self.dropout(self.prompt_embeddings.expand(-1, B, -1)),
+                        self.dropout(expand_prompt_embeddings),
+                        # self.dropout(self.prompt_embeddings.expand(-1, B, -1)),
                         x[1:, :, :]
                     ), dim=0)
         self.count += 1

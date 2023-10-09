@@ -146,7 +146,8 @@ class CLIPWrapper(pl.LightningModule):
         # Use pip install 'git+https://github.com/katsura-jp/pytorch-cosine-annealing-with-warmup'
         lr_scheduler = CosineAnnealingWarmupRestarts(
             optimizer,
-            first_cycle_steps=self.num_training_steps,
+            # first_cycle_steps=self.num_training_steps,
+            first_cycle_steps=4000,
             cycle_mult=1.0,
             max_lr=lr,
             min_lr=0,
@@ -337,7 +338,7 @@ class CustomCLIPWrapper(CLIPWrapper):
             },
             {
                 "params": [p for n, p in model.named_parameters() if any(nd in n for nd in no_smaller)],
-                "lr": 0.0001
+                "lr": 0.0001 * 1
             }
         ]
 

@@ -23,24 +23,7 @@ def main(hparams):
         print(param.size())
     # 共3个参数需要训练：model.visual.prompt_embeddings model.visual.transformer.prompt_embeddings model.visual.class_embedding
     print(params)
-    # no_smaller = ['model.visual.prompt_embeddings', 'model.visual.transformer.prompt_embeddings', 'model.visual.class_embedding']
-    #
-    # optimizer_grouped_parameters = [
-    #     {
-    #         "params": [p for n, p in model.named_parameters() if not any(nd in n for nd in no_smaller)],
-    #         "lr": 0.0001
-    #         # "weight_decay": args.weight_decay,
-    #     },
-    #     {
-    #         "params": [p for n, p in model.named_parameters() if any(nd in n for nd in no_smaller)],
-    #         "lr": 0.0001
-    #     }
-    # ]
 
-    # 冻结全部参数
-    # for param in model.parameters():
-    #     param.requires_grad = False
-    
     del hparams.model_name
 
 
