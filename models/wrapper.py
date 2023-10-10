@@ -333,7 +333,8 @@ class CustomCLIPWrapper(CLIPWrapper):
         optimizer_grouped_parameters = [
             {
                 "params": [p for n, p in model.named_parameters() if not any(nd in n for nd in no_smaller)],
-                "lr": 0.000
+                "lr": 0.000,
+                "requires_grad": False
                 # "weight_decay": args.weight_decay,
             },
             {
