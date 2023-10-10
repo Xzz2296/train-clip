@@ -342,15 +342,15 @@ class VisualTransformer(nn.Module):
 
         self.ln_post = LayerNorm(width)
         self.proj = nn.Parameter(scale * torch.randn(width, output_dim))
-        # insert Prompt moudle 初始化
-        # initiate prompt:
-        val = math.sqrt(6. / float(3 * reduce(mul, [patch_size,patch_size], 1) + output_dim))  # noqa
-        num_tokens =self.num_tokens
-        # num_layers =self.num_layers
-        # 设置require_grad=True,保证这个参数可以被更新
-        self.prompt_embeddings = nn.Parameter(torch.zeros(
-                    1, num_tokens, self.embedding_dim), requires_grad=True)
-        nn.init.uniform_(self.prompt_embeddings.data, -val, val)
+        # # insert Prompt moudle 初始化
+        # # initiate prompt:
+        # val = math.sqrt(6. / float(3 * reduce(mul, [patch_size,patch_size], 1) + output_dim))  # noqa
+        # num_tokens =self.num_tokens
+        # # num_layers =self.num_layers
+        # # 设置require_grad=True,保证这个参数可以被更新
+        # self.prompt_embeddings = nn.Parameter(torch.zeros(
+        #             1, num_tokens, self.embedding_dim), requires_grad=True)
+        # nn.init.uniform_(self.prompt_embeddings.data, -val, val)
 
     def forward(self, x: torch.Tensor):
         # 输入层的前向传播 ，而不是所有层的前向传播
@@ -362,15 +362,15 @@ class VisualTransformer(nn.Module):
         x = x + self.positional_embedding.to(x.dtype)
         # 添加位置信息在 cat拼接之前
         # B 即batch大小，是开始时输入的参数
-        B = x.shape[0]
-        # 将CLS PROMPT 和普通token拼接起来，使用的是nn中的dropout
-
-        if self.count==0:
-            x = torch.cat((
-                        x[:,:1,:],
-                        self.dropout(self.prompt_embeddings.expand(B,-1,-1)),
-                        x[:,1:,:]
-            ),dim=1)
+        # B = x.shape[0]
+        # # 将CLS PROMPT 和普通token拼接起来，使用的是nn中的dropout
+        #
+        # if self.count==0:
+        #     x = torch.cat((
+        #                 x[:,:1,:],
+        #                 self.dropout(self.prompt_embeddings.expand(B,-1,-1)),
+        #                 x[:,1:,:]
+        #     ),dim=1)
         x = self.ln_pre(x)
 
         x = x.permute(1, 0, 2)  # NLD -> LND  

@@ -328,8 +328,11 @@ class CustomCLIPWrapper(CLIPWrapper):
     def configure_optimizers(self):
         lr = self.learning_rate
         model = self.model
-        no_smaller = ['model.visual.prompt_embeddings', 'model.visual.transformer.prompt_embeddings',
-                      'model.visual.class_embedding']
+        no_smaller = ['model.visual.prompt_embeddings',
+                      #'model.visual.transformer.prompt_embeddings',
+                      'model.visual.class_embedding',
+                      [f"model.visual.transformer.resblocks.{i}.prompt_embeddings" for i in range(1, 10)]
+                      ]
         optimizer_grouped_parameters = [
             {
                 "params": [p for n, p in model.named_parameters() if not any(nd in n for nd in no_smaller)],
