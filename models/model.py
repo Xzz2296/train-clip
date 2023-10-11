@@ -332,7 +332,7 @@ class VisualTransformer(nn.Module):
         self.num_layers =12 #vit-b:12 vit-l:24
         self.deep = False
         self.count = 0
-        self.dropout =nn.Dropout(p=0.2)
+        self.dropout =nn.Dropout(p=0.1)
         scale = width ** -0.5
         self.class_embedding = nn.Parameter(scale * torch.randn(width))
         self.positional_embedding = nn.Parameter(scale * torch.randn((input_resolution // patch_size) ** 2 + 1, width))
