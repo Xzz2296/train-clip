@@ -28,7 +28,7 @@ def main(hparams):
 
 
     dm = TextImageDataModule.from_argparse_args(hparams)
-    trainer = Trainer.from_argparse_args(hparams, gpus=1, precision=16, max_epochs=32)
+    trainer = Trainer.from_argparse_args(hparams, gpus=1 , precision=16, max_epochs=32)
     # 添加gpus=x参数
     trainer.fit(model, dm)
 

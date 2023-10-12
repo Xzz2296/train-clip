@@ -225,7 +225,7 @@ class ResidualAttentionBlock2(nn.Module):
         self.embed_dim = 768
         self.num_tokens = 2
         self.last =last_layer
-        self.dropout = nn.Dropout(p=0.2)
+        self.dropout = nn.Dropout(p=0.1 )
         # 每个 ResidualAttentionBlock 都会在后面的前向传播中被逐一执行，共执行 layers 次
         val = math.sqrt(6. / float(3 * reduce(mul, [self.patch, self.patch], 1) + self.embed_dim))  # noqa
         self.prompt_embeddings = nn.Parameter(torch.zeros(

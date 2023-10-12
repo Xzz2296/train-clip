@@ -361,6 +361,7 @@ class CustomCLIPWrapper(CLIPWrapper):
 
         optimizer = torch.optim.SGD(
             optimizer_grouped_parameters,
+
             # self.parameters(),
             lr=lr,
             momentum=0.9
