@@ -218,13 +218,14 @@ class ResidualAttentionBlock(nn.Module):
 
 
 class ResidualAttentionBlock2(nn.Module):
-    def __init__(self, d_model: int, n_head: int, attn_mask: torch.Tensor = None, deep=True, last_layer=False):
+    def __init__(self, d_model: int, n_head: int, attn_mask: torch.Tensor = None, deep=True, last_layer=False, first_layer=False):
         super().__init__()
         self.Deep = deep
-        self.patch =16
+        self.patch =14
         #self.head =d_model
         self.embed_dim = d_model
         self.num_tokens = 2
+        self.first =first_layer
         self.last =last_layer
         self.dropout = nn.Dropout(p=0.1 )
         # 每个 ResidualAttentionBlock 都会在后面的前向传播中被逐一执行，共执行 layers 次
@@ -252,13 +253,22 @@ class ResidualAttentionBlock2(nn.Module):
         B = x.size()[1]  # X[patch ** 2+1, Batch , width]
         # 将prompt embedding 进行了拓展，第一个维度拓展到batch大小
         expand_prompt_embeddings = self.prompt_embeddings.expand(B, -1, -1).permute(1, 0, 2)
-        if self.Deep and not self.last:
+        # 这里还有问题 第一个块只添加不替换，后面的是进行替换
+        if self.first:
+            x = torch.cat((
+                x[:1, :, :],
+                self.dropout(expand_prompt_embeddings),
+                # self.dropout(self.prompt_embeddings.expand(-1, B, -1)),
+                x[1:, :, :]
+            ), dim=0)
+
+
+        elif self.Deep and not self.last:
             # x = torch.cat((
             #             x[:, :1, :],
             #             self.dropout(self.prompt_embeddings.expand(B, -1, -1)),
             #             x[:, 1+self.num_tokens:, :]
             #         ), dim=1)
-            # deep prompt embedding 还有问题
             x = torch.cat((
                 x[:1, :, :],
                 self.dropout(expand_prompt_embeddings),
@@ -290,7 +300,7 @@ class VTransformer(nn.Module):
         # self.count = 0
         # self.patch = 16
         # self.embed_dim =768
-        self.resblocks = nn.Sequential(*[ResidualAttentionBlock2(width, heads, attn_mask, last_layer = (i==layers-1)) for i in range(layers)])
+        self.resblocks = nn.Sequential(*[ResidualAttentionBlock2(width, heads, attn_mask, last_layer = (i==layers-1), first_layer = (i==0)) for i in range(layers)])
         # self.dropout = nn.Dropout(p=0.2)
         # 每个 ResidualAttentionBlock 都会在后面的前向传播中被逐一执行，共执行 layers 次
         # val = math.sqrt(6. / float(3 * reduce(mul, [self.patch,self.patch], 1) + self.embed_dim))  # noqa
@@ -329,11 +339,11 @@ class VisualTransformer(nn.Module):
         self.embedding_dim = 768
         self.conv1 = nn.Conv2d(in_channels=3, out_channels=width, kernel_size=patch_size, stride=patch_size, bias=False)
         # 定义插入的token个数
-        self.num_tokens =2
-        self.num_layers =12 #vit-b:12 vit-l:24
-        self.deep = False
-        self.count = 0
-        self.dropout =nn.Dropout(p=0.1)
+        # self.num_tokens =2
+        # self.num_layers =12 #vit-b:12 vit-l:24
+        # self.deep = False
+        # self.count = 0
+        # self.dropout =nn.Dropout(p=0.1)
         scale = width ** -0.5
         self.class_embedding = nn.Parameter(scale * torch.randn(width))
         self.positional_embedding = nn.Parameter(scale * torch.randn((input_resolution // patch_size) ** 2 + 1, width))

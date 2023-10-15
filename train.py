@@ -15,17 +15,15 @@ def main(hparams):
         hparams.minibatch_size = hparams.batch_size
 
     model = CLIPWrapper(hparams.model_name, config, hparams.minibatch_size)
-    params =list(model.named_parameters())
+    # params =list(model.named_parameters())
+    # print(params)
     # 枚举参数名称和 形状
     for name,param in model.named_parameters():
         #print(i)
         print(name)
         print(param.size())
-    # 共3个参数需要训练：model.visual.prompt_embeddings model.visual.transformer.prompt_embeddings model.visual.class_embedding
-    print(params)
-
+    # 共2 类参数可以训练：model.visual.transformer.resblocks.{i}.prompt_embeddings model.visual.class_embedding
     del hparams.model_name
-
 
     dm = TextImageDataModule.from_argparse_args(hparams)
     trainer = Trainer.from_argparse_args(hparams, gpus=1 , precision=16, max_epochs=32)
@@ -36,7 +34,7 @@ def main(hparams):
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--model_name', type=str, required=True)
-    #parser.add_argument('--batchsize', type=int)
+    # parser.add_argument('--batchsize', type=int)
     parser.add_argument('--minibatch_size', type=int, default=0)
     # parser.add_argument('--gpus', default=0, type=int)
     parser = TextImageDataModule.add_argparse_args(parser)
