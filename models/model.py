@@ -225,8 +225,8 @@ class ResidualAttentionBlock2(nn.Module):
         #self.head =d_model
         self.embed_dim = d_model
         self.num_tokens = 2
-        self.first =first_layer
-        self.last =last_layer
+        self.first = first_layer
+        self.last = last_layer
         self.dropout = nn.Dropout(p=0.1 )
         # 每个 ResidualAttentionBlock 都会在后面的前向传播中被逐一执行，共执行 layers 次
         val = math.sqrt(6. / float(3 * reduce(mul, [self.patch, self.patch], 1) + self.embed_dim))  # noqa
