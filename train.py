@@ -15,7 +15,7 @@ def main(hparams):
         hparams.minibatch_size = hparams.batch_size
 
     model = CLIPWrapper(hparams.model_name, config, hparams.minibatch_size)
-    # params =list(model.named_parameters())
+    params =list(model.named_parameters())
     # print(params)
     # 枚举参数名称和 形状
     for name,param in model.named_parameters():

@@ -85,7 +85,9 @@ class CLIPWrapper(pl.LightningModule):
 
         if isinstance(optimizer, list):
             optimizer = optimizer[0]
-        optimizer.zero_grad()
+
+        # 原来在这里进行梯度清零，挪到了计算loss的下面，看看会不会收敛，不收敛应该改回来
+        # optimizer.zero_grad()
 
         # image loss
         for j, mb in enumerate(image_mbs):
@@ -104,10 +106,23 @@ class CLIPWrapper(pl.LightningModule):
             loss = (F.cross_entropy(image_logits, ground_truth) + F.cross_entropy(image_logits.t(), ground_truth))/2
             self.manual_backward(loss)
 
-        optimizer.step()
-        lr_scheduler = self.lr_schedulers()
-        lr_scheduler.step()
-        self.model.logit_scale.data.clamp_(-np.log(100), np.log(100))
+        accumulate = True
+        if not accumulate:
+            optimizer.zero_grad()
+            optimizer.step()
+            lr_scheduler = self.lr_schedulers()
+            lr_scheduler.step()
+            self.model.logit_scale.data.clamp_(-np.log(100), np.log(100))
+
+        # grad_accumulation
+        else:
+            N = 2
+            if(idx+1) % N ==0:
+                optimizer.step()
+                optimizer.zero_grad()
+                lr_scheduler =self.lr_schedulers()
+                lr_scheduler.step()
+                self.model.logit_scale.data.clamp_(-np.log(100), np.log(100))
 
     def validation_step(self, val_batch, idx):
         image, text = val_batch
@@ -142,7 +157,7 @@ class CLIPWrapper(pl.LightningModule):
         optimizer_grouped_parameters = [
             {
                 "params": [p for n, p in model.named_parameters() if not any(nd in n for nd in no_smaller)],
-                "lr": 0.000,
+                "lr": 0.0004,
                 "requires_grad": False
                 # "weight_decay": args.weight_decay,
             },
