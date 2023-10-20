@@ -149,18 +149,39 @@ class CLIPWrapper(pl.LightningModule):
         if self.model_name == "ViT-L/14":
             Rmax = 23
 
+        # no_smaller = [
+        #     # 'model.visual.prompt_embeddings',
+        #     # 'model.visual.transformer.prompt_embeddings',
+        #     'model.visual.class_embedding']+[f"model.visual.transformer.resblocks.{i}.prompt_embeddings" for i in range(0, Rmax)]
+
         no_smaller = [
-            # 'model.visual.prompt_embeddings',
-            # 'model.visual.transformer.prompt_embeddings',
-            'model.visual.class_embedding']+[f"model.visual.transformer.resblocks.{i}.prompt_embeddings" for i in range(0, Rmax)]
+            'class_embedding','prompt_embedding'
+        ]
 
         optimizer_grouped_parameters = [
             {
                 "params": [p for n, p in model.named_parameters() if not any(nd in n for nd in no_smaller)],
-                "lr": 0.0004,
+                #"lr": 0.00004,
                 "requires_grad": False
                 # "weight_decay": args.weight_decay,
             },
+            {
+                "params": [p for n, p in model.named_parameters() if any(nd in n for nd in no_smaller)],
+                # "lr": 0.0001 * 1,
+                "lr": {
+                    "RN50": 5e-4,
+                    "RN101": 5e-4,
+                    "RN50x4": 5e-4,
+                    "RN50x16": 4e-4,
+                    "RN50x64": 3.6e-4,
+                    "ViT-B/32": 5e-4,
+                    "ViT-B/16": 5e-4,
+                    "ViT-L/14": 4e-4,
+                    "ViT-L/14-336px": 2e-5
+                }[self.model_name]
+            }
+        ]
+        grad_parameters = [
             {
                 "params": [p for n, p in model.named_parameters() if any(nd in n for nd in no_smaller)],
                 # "lr": 0.0001 * 1,
@@ -184,6 +205,7 @@ class CLIPWrapper(pl.LightningModule):
             #self.model.parameters(),
 
             optimizer_grouped_parameters,
+            # grad_parameters,
             # lr=lr,
             betas=(
                 0.9,
@@ -198,7 +220,7 @@ class CLIPWrapper(pl.LightningModule):
         lr_scheduler = CosineAnnealingWarmupRestarts(
             optimizer,
             # first_cycle_steps=self.num_training_steps,
-            first_cycle_steps=4000,
+            first_cycle_steps=8000,
             cycle_mult=1.0,
             max_lr=lr,
             min_lr=0,
@@ -383,12 +405,7 @@ class CustomCLIPWrapper(CLIPWrapper):
         if self.model_name=="ViT-L/14":
             Rmax = 23
 
-        no_smaller = [
-                      #'model.visual.prompt_embeddings',
-                      #'model.visual.transformer.prompt_embeddings',
-                      'model.visual.class_embedding',
-                      [f"model.visual.transformer.resblocks.{i}.prompt_embeddings" for i in range(0, Rmax)]
-                      ]
+        no_smaller = ['class_embedding','prompt_embedding']
         optimizer_grouped_parameters = [
             {
                 "params": [p for n, p in model.named_parameters() if not any(nd in n for nd in no_smaller)],
