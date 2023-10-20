@@ -1,4 +1,4 @@
-
+import platform
 import yaml
 from argparse import ArgumentParser
 from pytorch_lightning import Trainer
@@ -26,7 +26,10 @@ def main(hparams):
     del hparams.model_name
 
     dm = TextImageDataModule.from_argparse_args(hparams)
-    trainer = Trainer.from_argparse_args(hparams, gpus=1 , precision=16, max_epochs=32)
+    gpu_nums = 7
+    if platform.system() == 'Windows':
+        gpu_nums = 1
+    trainer = Trainer.from_argparse_args(hparams, gpus=gpu_nums , precision=16, max_epochs=32)
     # 添加gpus=x参数
     trainer.fit(model, dm)
 
