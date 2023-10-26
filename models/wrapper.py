@@ -79,6 +79,9 @@ class CLIPWrapper(pl.LightningModule):
             image_logits = torch.cat(ims) @ torch.cat(txt).t() * self.model.logit_scale.exp()
             ground_truth = torch.arange(len(image_logits)).long().to(image_logits.device)
             loss = (F.cross_entropy(image_logits, ground_truth) + F.cross_entropy(image_logits.t(), ground_truth)).div(2)
+            # 将交叉熵损失替换为KL散度 想法：就简单换个torch.nn.function函数:cross_entropy->KLDivLoss 但是KL度量的是两个分布之间的不相似性
+            #loss = (F.kl_div(image_logits, ground_truth,reduction='batchmean') + F.kl_div(image_logits.t(), ground_truth,reduction='batchmean')).div(2)
+            # loss = (F.kl_div(torch.cat(ims),torch.cat(txt),reduction='batchmean')+F.kl_div(torch.cat(txt),torch.cat(ims),reduction='batchmean')).div(2)
             acc_i = (torch.argmax(image_logits, 1) == ground_truth).sum()
             acc_t = (torch.argmax(image_logits, 0) == ground_truth).sum()
             self.log_dict({'loss': loss / len(ims), 'acc': (acc_i + acc_t) / 2 / len(image) / len(ims)}, prog_bar=True)
@@ -96,6 +99,7 @@ class CLIPWrapper(pl.LightningModule):
             image_logits = torch.cat(images_tmp) @ torch.cat(txt).t() * self.model.logit_scale.exp()
             ground_truth = torch.arange(len(image_logits)).long().to(image_logits.device)
             loss = (F.cross_entropy(image_logits, ground_truth) + F.cross_entropy(image_logits.t(), ground_truth))/2
+            # loss = (F.kl_div(torch.cat(txt), torch.cat(ims)) + F.kl_div(torch.cat(ims), torch.cat(txt))) / 2
             self.manual_backward(loss)
 
         # text loss
@@ -104,12 +108,13 @@ class CLIPWrapper(pl.LightningModule):
             text_tmp[self.global_rank][j*self.minibatch_size:(j+1)*self.minibatch_size] = F.normalize(self.model.encode_text(mb), dim=1)
             image_logits = torch.cat(ims) @ torch.cat(text_tmp).t() * self.model.logit_scale.exp()
             loss = (F.cross_entropy(image_logits, ground_truth) + F.cross_entropy(image_logits.t(), ground_truth))/2
+            # loss = (F.kl_div(torch.cat(txt), torch.cat(ims)) + F.kl_div(torch.cat(ims), torch.cat(txt))) / 2
             self.manual_backward(loss)
 
         accumulate = True
         if not accumulate:
-            optimizer.zero_grad()
             optimizer.step()
+            optimizer.zero_grad()
             lr_scheduler = self.lr_schedulers()
             lr_scheduler.step()
             self.model.logit_scale.data.clamp_(-np.log(100), np.log(100))

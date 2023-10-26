@@ -271,7 +271,8 @@ class ResidualAttentionBlock2(nn.Module):
             #         ), dim=1)
             x = torch.cat((
                 x[:1, :, :],
-                self.dropout(expand_prompt_embeddings),
+                self.dropout(expand_prompt_embeddings+x[1:1+self.num_tokens, :, :]),
+                # self.dropout(expand_prompt_embeddings)
                 # self.dropout(self.prompt_embeddings.expand(-1, B, -1)),
                 x[1+self.num_tokens:, :, :]
             ), dim=0)
