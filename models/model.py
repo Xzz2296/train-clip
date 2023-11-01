@@ -495,6 +495,9 @@ class CLIP(nn.Module):
         return self.visual.conv1.weight.dtype
 
     def encode_image(self, image):
+        # result =self.visual(image.type(torch.float32))
+        # return result
+        # return self.visual(image.type(torch.float32))
         return self.visual(image.type(self.dtype))
 
     def encode_text(self, text):

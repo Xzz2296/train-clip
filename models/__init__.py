@@ -1,1 +1,1 @@
-from .wrapper import CLIPWrapper, CustomCLIPWrapper
+from .wrapper import CLIPWrapper, CustomCLIPWrapper, CLIPWrapper2
