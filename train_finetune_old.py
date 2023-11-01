@@ -9,8 +9,8 @@ from transformers import AutoTokenizer, AutoModel
 import clip
 
 def main(hparams):
-    img_encoder = resnet50(pretrained=True)
-    img_encoder.fc = torch.nn.Linear(2048, 768)
+    # img_encoder = resnet50(pretrained=True)
+    # img_encoder.fc = torch.nn.Linear(2048, 768)
     # clip_model, process =clip.load('chek/ViT-L-14.pt')
     # clip_model =clip_model.cuda()
     # img_encoder = clip_model.visual.cuda()
