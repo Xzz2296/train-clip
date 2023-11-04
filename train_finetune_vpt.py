@@ -1,4 +1,5 @@
 import torch
+import platform
 import yaml
 from argparse import ArgumentParser
 from pytorch_lightning import Trainer
@@ -32,7 +33,11 @@ def main(hparams):
     model = CLIPWrapper2(hparams.model_name, config, hparams.minibatch_size)
     dm = TextImageDataModule.from_argparse_args(hparams)
 
-    trainer = Trainer.from_argparse_args(hparams,gpus=1 ,precision=32, max_epochs=32)
+    gpu_nums = 7
+    if platform.system() == 'Windows':
+        gpu_nums = 1
+
+    trainer = Trainer.from_argparse_args(hparams,gpus=gpu_nums ,precision=32, max_epochs=5)
     trainer.fit(model, dm)
 
 

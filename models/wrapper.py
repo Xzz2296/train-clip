@@ -488,8 +488,10 @@ class CLIPWrapper2(pl.LightningModule):
         super().__init__()
 
         self.model_name = model_name
-        # self.model = CLIP(**config)
-        self.model, process = clip.load('chek/ViT-L-14.pt')
+        self.model = CLIP(**config)
+        pretrained_model = torch.jit.load('chek/ViT-L-14.pt',map_location="cpu")
+        # self.model, process = clip.load('chek/ViT-L-14.pt')
+        self.model.load_state_dict(pretrained_model.state_dict(), strict=False)
         self.minibatch_size = minibatch_size
         self.isViT = 'ViT' in self.model_name
 
@@ -614,11 +616,12 @@ class CLIPWrapper2(pl.LightningModule):
             "ViT-L/14": 4e-4,
             "ViT-L/14-336px": 2e-5
         }[self.model_name]
+        lr =lr/100
 
         model = self.model
-        Rmax = 10
-        if self.model_name == "ViT-L/14":
-            Rmax = 23
+        # Rmax = 10
+        # if self.model_name == "ViT-L/14":
+        #     Rmax = 23
 
         # no_smaller = [
         #     # 'model.visual.prompt_embeddings',
@@ -666,7 +669,7 @@ class CLIPWrapper2(pl.LightningModule):
                     "ViT-B/16": 5e-4,
                     "ViT-L/14": 4e-4,
                     "ViT-L/14-336px": 2e-5
-                }[self.model_name]
+                }[self.model_name] /100
             }
         ]
 
@@ -674,9 +677,8 @@ class CLIPWrapper2(pl.LightningModule):
             # 筛选requires_grad ==True
             # filter(lambda p: p.requires_grad, self.model.parameters()),
             # self.model.parameters(),
-
-            optimizer_grouped_parameters,
-            # grad_parameters,
+            # optimizer_grouped_parameters,
+            grad_parameters,
             # lr=lr,
             betas=(
                 0.9,
@@ -691,7 +693,7 @@ class CLIPWrapper2(pl.LightningModule):
         lr_scheduler = CosineAnnealingWarmupRestarts(
             optimizer,
             # first_cycle_steps=self.num_training_steps,
-            first_cycle_steps=8000,
+            first_cycle_steps=20000,
             cycle_mult=1.0,
             max_lr=lr,
             min_lr=0,
