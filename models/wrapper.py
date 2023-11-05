@@ -634,14 +634,15 @@ class CLIPWrapper2(pl.LightningModule):
 
         optimizer_grouped_parameters = [
             {
-                "params": [p for n, p in model.named_parameters() if not any(nd in n for nd in no_smaller)],
-                # "lr": 0.00004,
-                "requires_grad": False
+                "params": [p for n, p in model.visual.named_parameters() if not any(nd in n for nd in no_smaller)],
+                "lr": lr /100,
+                # "requires_grad": False
                 # "weight_decay": args.weight_decay,
             },
             {
-                "params": [p for n, p in model.named_parameters() if any(nd in n for nd in no_smaller)],
-                # "lr": 0.0001 * 1,
+                "params": [p for n, p in model.visual.named_parameters() if any(nd in n for nd in no_smaller)],
+                "lr": lr,
+
                 "lr": {
                     "RN50": 5e-4,
                     "RN101": 5e-4,
@@ -653,6 +654,7 @@ class CLIPWrapper2(pl.LightningModule):
                     "ViT-L/14": 4e-4,
                     "ViT-L/14-336px": 2e-5
                 }[self.model_name]
+
             }
         ]
         grad_parameters = [
@@ -677,8 +679,8 @@ class CLIPWrapper2(pl.LightningModule):
             # 筛选requires_grad ==True
             # filter(lambda p: p.requires_grad, self.model.parameters()),
             # self.model.parameters(),
-            # optimizer_grouped_parameters,
-            grad_parameters,
+            optimizer_grouped_parameters,
+            # grad_parameters,
             # lr=lr,
             betas=(
                 0.9,
