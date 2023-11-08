@@ -26,7 +26,7 @@ def main(hparams):
     if platform.system() == 'Windows':
         gpu_nums = 1
 
-    trainer = Trainer.from_argparse_args(hparams,gpus=gpu_nums ,precision=32, max_epochs=12)
+    trainer = Trainer.from_argparse_args(hparams,gpus=gpu_nums ,precision=16, max_epochs=12)
     trainer.fit(model, dm)
 
 
