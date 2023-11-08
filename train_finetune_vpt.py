@@ -3,28 +3,17 @@ import platform
 import yaml
 from argparse import ArgumentParser
 from pytorch_lightning import Trainer
-from data.text_image_dm import TextImageDataModule
+from data.text_image_dm_val import TextImageDataModule
 from models import CustomCLIPWrapper, CLIPWrapper2
 from torchvision.models import resnet50,vit_l_16
 from transformers import AutoTokenizer, AutoModel
 import clip
 
 def main(hparams):
-    # img_encoder = resnet50(pretrained=True)
-    # img_encoder.fc = torch.nn.Linear(2048, 768)
-    # clip_model, process =clip.load('chek/ViT-L-14.pt')
-    # clip_model =clip_model.cuda()
-    # img_encoder = clip_model.visual.cuda()
-    # for name,param in img_encoder.named_parameters():
-    #     print (param.device)
-    # print()
-    # print(clip_model.visual)
-    # tokenizer = AutoTokenizer.from_pretrained("johngiorgi/declutr-sci-base")
+
     config_dir = 'models/configs/ViT.yaml' if 'ViT' in hparams.model_name else 'models/configs/RN.yaml'
     with open(config_dir) as fin:
         config = yaml.safe_load(fin)[hparams.model_name]
-    # tokenizer = AutoTokenizer.from_pretrained(r"E:\xpj\models\declutr-sci-base")
-    # txt_encoder = AutoModel.from_pretrained(r"E:\xpj\models\declutr-sci-base")
 
     if hparams.minibatch_size < 1:
         hparams.minibatch_size = hparams.batch_size
@@ -37,7 +26,7 @@ def main(hparams):
     if platform.system() == 'Windows':
         gpu_nums = 1
 
-    trainer = Trainer.from_argparse_args(hparams,gpus=gpu_nums ,precision=32, max_epochs=5)
+    trainer = Trainer.from_argparse_args(hparams,gpus=gpu_nums ,precision=32, max_epochs=12)
     trainer.fit(model, dm)
 
 

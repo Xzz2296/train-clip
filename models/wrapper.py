@@ -600,9 +600,17 @@ class CLIPWrapper2(pl.LightningModule):
     def validation_step(self, val_batch, idx):
         image, text = val_batch
         image_logits, text_logits = self.forward(image, text)
-        ground_truth = torch.arange(len(image_logits))
+        ground_truth = torch.arange(len(image_logits)).to('cuda')
         loss = (F.cross_entropy(image_logits, ground_truth) + F.cross_entropy(text_logits, ground_truth)).div(2)
-        self.log('val_loss', loss)
+        acc_i = (torch.argmax(image_logits, 1) == ground_truth).sum()
+        acc_t = (torch.argmax(image_logits, 0) == ground_truth).sum()
+
+        # self.log('val_loss', loss)
+        self.log_dict({'val_loss': loss , 'val_acc': (acc_i + acc_t) / 2 / len(image) }, prog_bar=True)
+
+    def forward(self, images, text):
+        logits = F.normalize(self.model.encode_image(images), dim=1) @ F.normalize(self.model.encode_text(text), dim=1).t() * self.model.logit_scale.exp()
+        return logits, logits.t()
 
     def configure_optimizers(self):
         lr = {
