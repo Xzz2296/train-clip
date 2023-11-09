@@ -7,6 +7,7 @@ import math
 import yaml
 import copy
 import clip
+import platform
 from cosine_annealing_warmup import CosineAnnealingWarmupRestarts
 from .model import CLIP
 #from .model_old import CLIP
@@ -489,7 +490,10 @@ class CLIPWrapper2(pl.LightningModule):
 
         self.model_name = model_name
         self.model = CLIP(**config)
-        pretrained_model = torch.jit.load('chek/ViT-L-14.pt',map_location="cpu")
+        self.model_path = 'chek/ViT-L-14.pt'
+        if platform.system() == 'Linux':
+            self.model_path = '/workspace/DATA/xpj/model/ViT-L-14.pt'
+        pretrained_model = torch.jit.load(self.model_path,map_location="cpu")
         # self.model, process = clip.load('chek/ViT-L-14.pt')
         self.model.load_state_dict(pretrained_model.state_dict(), strict=False)
         self.minibatch_size = minibatch_size
@@ -598,15 +602,17 @@ class CLIPWrapper2(pl.LightningModule):
                 self.model.logit_scale.data.clamp_(-np.log(100), np.log(100))
 
     def validation_step(self, val_batch, idx):
-        image, text = val_batch
-        image_logits, text_logits = self.forward(image, text)
-        ground_truth = torch.arange(len(image_logits)).to('cuda')
-        loss = (F.cross_entropy(image_logits, ground_truth) + F.cross_entropy(text_logits, ground_truth)).div(2)
-        acc_i = (torch.argmax(image_logits, 1) == ground_truth).sum()
-        acc_t = (torch.argmax(image_logits, 0) == ground_truth).sum()
+        self.model.eval()
+        with torch.no_grad():
+            image, text = val_batch
+            image_logits, text_logits = self.forward(image, text)
+            ground_truth = torch.arange(len(image_logits)).to('cuda')
+            loss = (F.cross_entropy(image_logits, ground_truth) + F.cross_entropy(text_logits, ground_truth)).div(2)
+            acc_i = (torch.argmax(image_logits, 1) == ground_truth).sum()
+            acc_t = (torch.argmax(image_logits, 0) == ground_truth).sum()
 
-        # self.log('val_loss', loss)
-        self.log_dict({'val_loss': loss , 'val_acc': (acc_i + acc_t) / 2 / len(image) }, prog_bar=True)
+            # self.log('val_loss', loss)
+            self.log_dict({'val_loss': loss , 'val_acc': (acc_i + acc_t) / 2 / len(image) }, prog_bar=True)
 
     def forward(self, images, text):
         logits = F.normalize(self.model.encode_image(images), dim=1) @ F.normalize(self.model.encode_text(text), dim=1).t() * self.model.logit_scale.exp()
