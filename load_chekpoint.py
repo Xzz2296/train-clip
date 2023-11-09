@@ -1,20 +1,25 @@
-import platform
+import torch
+import torch.nn.functional as F
 import yaml
-from argparse import ArgumentParser
-from pytorch_lightning import Trainer
-from data.text_image_dm import TextImageDataModule
-from models import CLIPWrapper
+from models import  CLIPWrapper2
 
-MODEL_NAME ='ViT-L/16'
+def main():
+    config_dir = 'models/configs/ViT.yaml'
+    with open(config_dir) as fin:
+        config = yaml.safe_load(fin)['ViT-L/14']
 
-DEVICE ='cuda'
+    model = CLIPWrapper2('ViT-L/14', config, 8, model_path='chek/epoch=31-step=5823.ckpt')
+    model.eval()
+    with torch.no_grad():
+        image , text = []
+        image_encoder = model.model.encode_image()
+        text_encoder = model.model.encode_text()
+        logits = F.normalize(image_encoder(image), dim=1) @ F.normalize(text_encoder(text),
+                                                                            dim=1).t() * model.logit_scale.exp()
+        image_logits= logits
+        text_logits =logits.T
+        print("hello world!")
 
-CHECKPOINT ='chek/vit_l_16-852ce7e3.pth'
 
-config_dir = 'models/configs/ViT.yaml' if 'ViT' in MODEL_NAME else 'models/configs/RN.yaml'
-with open(config_dir) as fin:
-    config = yaml.safe_load(fin)[MODEL_NAME ]
-
-model = CLIPWrapper.load_from_checkpoint(CHECKPOINT, model_name=MODEL_NAME, config=config, minibatch_size=1).model.to(DEVICE)
-
-print("1")
+if __name__ == '__main__':
+    main()

@@ -478,7 +478,8 @@ class CLIPWrapper2(pl.LightningModule):
     def __init__(self,
                  model_name: str,
                  config: dict,
-                 minibatch_size: int
+                 minibatch_size: int,
+                 model_path:str
                  ):
         """A lightning wrapper for a CLIP model as specified in the paper.
 
@@ -490,12 +491,19 @@ class CLIPWrapper2(pl.LightningModule):
 
         self.model_name = model_name
         self.model = CLIP(**config)
-        self.model_path = 'chek/ViT-L-14.pt'
+
+        self.model_path =model_path
         if platform.system() == 'Linux':
             self.model_path = '/workspace/DATA/xpj/model/ViT-L-14.pt'
-        pretrained_model = torch.jit.load(self.model_path,map_location="cpu")
-        # self.model, process = clip.load('chek/ViT-L-14.pt')
-        self.model.load_state_dict(pretrained_model.state_dict(), strict=False)
+        lst =self.model_path.split(".")
+        if lst[-1] == 'pt':
+            pretrained_model = torch.jit.load(self.model_path,map_location="cpu")
+            # self.model, process = clip.load('chek/ViT-L-14.pt')
+            self.model.load_state_dict(pretrained_model.state_dict(), strict=False)
+        elif lst[-1] == 'ckpt':
+            pretrained_model = torch.load(self.model_path,map_location='cpu')
+            self.model.load_state_dict(pretrained_model,strict=False)
+        else: assert lst[-1]== 'pt' or lst[-1]=='ckpt'
         self.minibatch_size = minibatch_size
         self.isViT = 'ViT' in self.model_name
 

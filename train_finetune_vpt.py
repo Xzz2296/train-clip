@@ -19,7 +19,7 @@ def main(hparams):
         hparams.minibatch_size = hparams.batch_size
 
     # model = CustomCLIPWrapper(img_encoder, txt_encoder, hparams.minibatch_size, avg_word_embs=True)
-    model = CLIPWrapper2(hparams.model_name, config, hparams.minibatch_size)
+    model = CLIPWrapper2(hparams.model_name, config, hparams.minibatch_size,model_path='chek/ViT-L-14.pt')
     dm = TextImageDataModule.from_argparse_args(hparams)
 
     gpu_nums = 7
