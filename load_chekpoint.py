@@ -3,12 +3,13 @@ import torch.nn.functional as F
 import yaml
 from models import  CLIPWrapper2
 
+device = "cuda" if torch.cuda.is_available() else "cpu"
 def main():
     config_dir = 'models/configs/ViT.yaml'
     with open(config_dir) as fin:
         config = yaml.safe_load(fin)['ViT-L/14']
 
-    model = CLIPWrapper2('ViT-L/14', config, 8, model_path='chek/epoch=31-step=5823.ckpt')
+    model = CLIPWrapper2('ViT-L/14', config, 8, model_path='chek/epoch=31-step=5823.ckpt').to(device)
     model.eval()
     with torch.no_grad():
         image , text = []

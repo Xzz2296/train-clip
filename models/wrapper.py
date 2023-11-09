@@ -638,7 +638,7 @@ class CLIPWrapper2(pl.LightningModule):
             "ViT-L/14": 4e-4,
             "ViT-L/14-336px": 2e-5
         }[self.model_name]
-        lr =lr/100
+        lr =lr
 
         model = self.model
         # Rmax = 10
@@ -670,18 +670,8 @@ class CLIPWrapper2(pl.LightningModule):
         grad_parameters = [
             {
                 "params": [p for n, p in model.visual.named_parameters() if any(nd in n for nd in no_smaller)],
-                # "lr": 0.0001 * 1,
-                "lr": {
-                    "RN50": 5e-4,
-                    "RN101": 5e-4,
-                    "RN50x4": 5e-4,
-                    "RN50x16": 4e-4,
-                    "RN50x64": 3.6e-4,
-                    "ViT-B/32": 5e-4,
-                    "ViT-B/16": 5e-4,
-                    "ViT-L/14": 4e-4,
-                    "ViT-L/14-336px": 2e-5
-                }[self.model_name] /100
+                "lr": lr,
+
             }
         ]
 
