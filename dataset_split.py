@@ -37,9 +37,9 @@ def split_dataset(data_folder, image_folder, text_folder, train_ratio=0.8, val_r
     train_keys, val_keys = train_test_split(train_keys, test_size=num_val, random_state=random_seed)
 
     # 将文件名转换为完整的文件路径
-    train_files = [os.path.join(file) for key in train_keys for file in text_file_groups[key]]
-    val_files = [os.path.join(file) for key in val_keys for file in text_file_groups[key]]
-    test_files = [ os.path.join(file) for key in test_keys for file in text_file_groups[key]]
+    train_files = [os.path.join(file.split('.')[0]) for key in train_keys for file in text_file_groups[key]]
+    val_files = [os.path.join(file.split('.')[0]) for key in val_keys for file in text_file_groups[key]]
+    test_files = [ os.path.join(file.split('.')[0]) for key in test_keys for file in text_file_groups[key]]
 
     # 保存结果到文件
     save_to_file(train_files, 'train_set.txt')

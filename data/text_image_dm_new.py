@@ -39,11 +39,13 @@ class TextImageDataset(Dataset):
             *path.glob('**/*.png'), *path.glob('**/*.jpg'),
             *path.glob('**/*.jpeg'), *path.glob('**/*.bmp')
         ]
-        with open(train_val_file,'r') as file:
-            train_list = file.readlines()
+        with open(train_val_file, 'r') as file:
+            train_list = [line.strip() for line in file.readlines()]
         # text_list =
-        text_files = {text_file.stem: text_file for text_file in text_files if text_file in train_list}
-        image_files = {image_file.stem: image_file for image_file in image_files if image_file in train_list}
+        text_files = {text_file.stem: text_file for text_file in text_files if text_file.stem in train_list}
+        # text_files = {text_file.stem: text_file for text_file in text_files}
+        # text_files = {text_file: text_file for text_file in train_list}
+        image_files = {image_file.stem: image_file for image_file in image_files if image_file.stem in train_list}
 
         keys = (image_files.keys() & text_files.keys())
 
@@ -110,7 +112,7 @@ class TextImageDataset(Dataset):
 class TextImageDataModule(LightningDataModule):
     def __init__(self,
                  folder: str,
-                 folder2: str,
+                 # folder2: str,
                  batch_size: int,
                  num_workers=0,
                  image_size=224,
@@ -131,7 +133,7 @@ class TextImageDataModule(LightningDataModule):
         """
         super().__init__()
         self.folder =folder
-        self.folder2 =folder2
+        # self.folder2 =folder2
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.image_size = image_size
