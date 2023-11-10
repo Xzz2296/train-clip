@@ -3,7 +3,7 @@ import platform
 import yaml
 from argparse import ArgumentParser
 from pytorch_lightning import Trainer
-from data.text_image_dm_val import TextImageDataModule
+from data.text_image_dm_new import TextImageDataModule
 from models import CustomCLIPWrapper, CLIPWrapper2
 from torchvision.models import resnet50,vit_l_16
 from transformers import AutoTokenizer, AutoModel
