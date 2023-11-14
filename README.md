@@ -4,7 +4,10 @@ A PyTorch Lightning solution to training CLIP from both scratch and fine-tuning.
 
 ### 注意：需要安装openAI的clip的依赖 https://github.com/openai/CLIP
 ### 其他缺少的包版本请参照requirements.txt
- 
+### 预训练权重(.ckpt文件）请从24服务器下载，速度更快： /workspace/DATA/xpj/model/
+### 加载预训练权重请参考load_chekpoint.py
+
+---
 ## Usage 🚂
 
 ### From Scratch 🌵

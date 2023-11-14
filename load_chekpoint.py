@@ -26,7 +26,7 @@ def main():
         image = transform(image).to(device)
         # 仅使用CLIP模型的视觉部分 即ViT
         feature = model.model.encode_image(image)
-        # 特征形状为1*768
+        # 特征形状为n*768 ,n为送入图像的数量
         print(feature)
 
 
