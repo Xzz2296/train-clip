@@ -1,3 +1,5 @@
+import typing
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -475,11 +477,12 @@ class CustomCLIPWrapper(CLIPWrapper):
 
 
 class CLIPWrapper2(pl.LightningModule):
+    model_name: typing.Optional[str]
     def __init__(self,
                  model_name: str,
                  config: dict,
                  minibatch_size: int,
-                 model_path:str
+                 model_path: str
                  ):
         """A lightning wrapper for a CLIP model as specified in the paper.
 

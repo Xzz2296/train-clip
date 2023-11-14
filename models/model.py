@@ -366,6 +366,8 @@ class VisualTransformer(nn.Module):
 
     def forward(self, x: torch.Tensor):
         # 输入层的前向传播 ，而不是所有层的前向传播
+        if x.ndim == 3:
+            x = x.unsqueeze(0)
         x = self.conv1(x)  # shape = [*, width, grid, grid]
         x = x.reshape(x.shape[0], x.shape[1], -1)  # shape = [*, width, grid ** 2]
         x = x.permute(0, 2, 1)  # shape = [*, grid ** 2, width]

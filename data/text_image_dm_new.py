@@ -96,8 +96,9 @@ class TextImageDataset(Dataset):
             print(f"An exception occurred trying to load file {text_file}.")
             print(f"Skipping index {ind}")
             return self.skip_sample(ind)
-
-        tokenized_text = description if self.custom_tokenizer else clip.tokenize(description)[0]
+        b =description[0]
+        a=len(description[0])
+        tokenized_text = description if self.custom_tokenizer else clip.tokenize(description, truncate=True)[0]
 
         try:
             image_tensor = self.image_transform(PIL.Image.open(image_file))
