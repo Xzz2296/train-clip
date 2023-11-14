@@ -1,4 +1,5 @@
 # Sourced directly from OpenAI's CLIP repo
+import typing
 from collections import OrderedDict
 from typing import Tuple, Union
 
@@ -169,7 +170,7 @@ class QuickGELU(nn.Module):
 
 
 class ResidualAttentionBlock(nn.Module):
-    def __init__(self, d_model: int, n_head: int, attn_mask: torch.Tensor = None, deep = True, last_layer = False):
+    def __init__(self, d_model: int, n_head: int, attn_mask: typing.Optional[torch.Tensor] = None):
         super().__init__()
         # self.Deep = deep
         # if deep and not last_layer:
@@ -179,7 +180,7 @@ class ResidualAttentionBlock(nn.Module):
         #     self.prompt_embeddings = nn.Parameter(torch.zeros(
         #                  self.num_tokens, self.embed_dim), requires_grad=True)
         #     nn.init.uniform_(self.prompt_embeddings.data, -val, val)
-            
+
         self.attn = nn.MultiheadAttention(d_model, n_head)
         self.ln_1 = LayerNorm(d_model)
         self.mlp = nn.Sequential(OrderedDict([
@@ -218,11 +219,13 @@ class ResidualAttentionBlock(nn.Module):
 
 
 class ResidualAttentionBlock2(nn.Module):
-    def __init__(self, d_model: int, n_head: int, attn_mask: torch.Tensor = None, deep=True, last_layer=False, first_layer=False):
+    def __init__(self, d_model: int, n_head: int, attn_mask: typing.Optional[torch.Tensor] = None, deep=True,
+                 last_layer=False,
+                 first_layer=False):
         super().__init__()
         self.Deep = deep
-        self.patch =14
-        #self.head =d_model
+        self.patch = 14
+        # self.head =d_model
         self.embed_dim = d_model
         self.num_tokens = 20
         self.first = first_layer
@@ -262,7 +265,6 @@ class ResidualAttentionBlock2(nn.Module):
                 x[1:, :, :]
             ), dim=0)
 
-
         elif self.Deep and not self.last:
             # x = torch.cat((
             #             x[:, :1, :],
@@ -274,12 +276,13 @@ class ResidualAttentionBlock2(nn.Module):
                 # self.dropout(expand_prompt_embeddings+x[1:1+self.num_tokens, :, :]),
                 self.dropout(expand_prompt_embeddings),
                 # self.dropout(self.prompt_embeddings.expand(-1, B, -1)),
-                x[1+self.num_tokens:, :, :]
+                x[1 + self.num_tokens:, :, :]
             ), dim=0)
         # self.count += 1
         x = x + self.attention(self.ln_1(x))
         x = x + self.mlp(self.ln_2(x))
         return x
+
 
 class Transformer(nn.Module):
     def __init__(self, width: int, layers: int, heads: int, attn_mask: torch.Tensor = None):
@@ -287,9 +290,11 @@ class Transformer(nn.Module):
         self.width = width
         self.layers = layers
         self.resblocks = nn.Sequential(*[ResidualAttentionBlock(width, heads, attn_mask) for _ in range(layers)])
+
     def forward(self, x: torch.Tensor):
         # 这里不能乱改，CLIP的 text_encoder 使用的也是这个transformer，在微调的过程中只对VIT中的Transformer做调整
         return self.resblocks(x)
+
 
 class VTransformer(nn.Module):
     def __init__(self, width: int, layers: int, heads: int, attn_mask: torch.Tensor = None):
@@ -301,7 +306,9 @@ class VTransformer(nn.Module):
         # self.count = 0
         # self.patch = 16
         # self.embed_dim =768
-        self.resblocks = nn.Sequential(*[ResidualAttentionBlock2(width, heads, attn_mask, last_layer = (i==layers-1), first_layer = (i==0)) for i in range(layers)])
+        self.resblocks = nn.Sequential(
+            *[ResidualAttentionBlock2(width, heads, attn_mask, last_layer=(i == layers - 1), first_layer=(i == 0)) for i
+              in range(layers)])
         # self.dropout = nn.Dropout(p=0.2)
         # 每个 ResidualAttentionBlock 都会在后面的前向传播中被逐一执行，共执行 layers 次
         # val = math.sqrt(6. / float(3 * reduce(mul, [self.patch,self.patch], 1) + self.embed_dim))  # noqa
@@ -317,18 +324,18 @@ class VTransformer(nn.Module):
         # # 将prompt embedding 进行了拓展，第一个维度拓展到batch大小
         # expand_prompt_embeddings = self.prompt_embeddings.expand(B,-1,-1).permute(1,0,2)
         # if self.count >0:
-            # x = torch.cat((
-            #             x[:, :1, :],
-            #             self.dropout(self.prompt_embeddings.expand(B, -1, -1)),
-            #             x[:, 1+self.num_tokens:, :]
-            #         ), dim=1)
-            # deep prompt embedding 还有问题
-            # x = torch.cat((
-            #             x[:1, :, :],
-            #             self.dropout(expand_prompt_embeddings),
-            #             # self.dropout(self.prompt_embeddings.expand(-1, B, -1)),
-            #             x[1:, :, :]
-            #         ), dim=0)
+        # x = torch.cat((
+        #             x[:, :1, :],
+        #             self.dropout(self.prompt_embeddings.expand(B, -1, -1)),
+        #             x[:, 1+self.num_tokens:, :]
+        #         ), dim=1)
+        # deep prompt embedding 还有问题
+        # x = torch.cat((
+        #             x[:1, :, :],
+        #             self.dropout(expand_prompt_embeddings),
+        #             # self.dropout(self.prompt_embeddings.expand(-1, B, -1)),
+        #             x[1:, :, :]
+        #         ), dim=0)
         # self.count += 1
         return self.resblocks(x)
 
@@ -372,7 +379,9 @@ class VisualTransformer(nn.Module):
         x = x.reshape(x.shape[0], x.shape[1], -1)  # shape = [*, width, grid ** 2]
         x = x.permute(0, 2, 1)  # shape = [*, grid ** 2, width]
         # 添加CLS
-        x = torch.cat([self.class_embedding.to(x.dtype) + torch.zeros(x.shape[0], 1, x.shape[-1], dtype=x.dtype, device=x.device), x], dim=1)  # shape = [*, grid ** 2 + 1, width]
+        x = torch.cat(
+            [self.class_embedding.to(x.dtype) + torch.zeros(x.shape[0], 1, x.shape[-1], dtype=x.dtype, device=x.device),
+             x], dim=1)  # shape = [*, grid ** 2 + 1, width]
         x = x + self.positional_embedding.to(x.dtype)
         # 添加位置信息在 cat拼接之前
         # B 即batch大小，是开始时输入的参数
@@ -563,12 +572,14 @@ def build_model(state_dict: dict):
 
     if vit:
         vision_width = state_dict["visual.conv1.weight"].shape[0]
-        vision_layers = len([k for k in state_dict.keys() if k.startswith("visual.") and k.endswith(".attn.in_proj_weight")])
+        vision_layers = len(
+            [k for k in state_dict.keys() if k.startswith("visual.") and k.endswith(".attn.in_proj_weight")])
         vision_patch_size = state_dict["visual.conv1.weight"].shape[-1]
         grid_size = round((state_dict["visual.positional_embedding"].shape[0] - 1) ** 0.5)
         image_resolution = vision_patch_size * grid_size
     else:
-        counts: list = [len(set(k.split(".")[2] for k in state_dict if k.startswith(f"visual.layer{b}"))) for b in [1, 2, 3, 4]]
+        counts: list = [len(set(k.split(".")[2] for k in state_dict if k.startswith(f"visual.layer{b}"))) for b in
+                        [1, 2, 3, 4]]
         vision_layers = tuple(counts)
         vision_width = state_dict["visual.layer1.0.conv1.weight"].shape[0]
         output_width = round((state_dict["visual.attnpool.positional_embedding"].shape[0] - 1) ** 0.5)

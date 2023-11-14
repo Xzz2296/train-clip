@@ -477,7 +477,6 @@ class CustomCLIPWrapper(CLIPWrapper):
 
 
 class CLIPWrapper2(pl.LightningModule):
-    model_name: typing.Optional[str]
     def __init__(self,
                  model_name: str,
                  config: dict,
@@ -501,7 +500,7 @@ class CLIPWrapper2(pl.LightningModule):
         lst =self.model_path.split(".")
         if lst[-1] == 'pt':
             pretrained_model = torch.jit.load(self.model_path,map_location="cpu")
-            # self.model, process = clip.load('chek/ViT-L-14.pt')
+            # self.model, process = clip.load('ckpt/ViT-L-14.pt')
             self.model.load_state_dict(pretrained_model.state_dict(), strict=False)
         elif lst[-1] == 'ckpt':
             pretrained_model = torch.load(self.model_path,map_location='cpu')

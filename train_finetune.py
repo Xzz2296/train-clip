@@ -10,7 +10,7 @@ import clip
 def main(hparams):
     # img_encoder = vit_l_16(pretrained=True)
     # img_encoder.fc = torch.nn.Linear(2048, 768)
-    clip_model, process =clip.load('chek/ViT-L-14.pt')
+    clip_model, process =clip.load('ckpt/ViT-L-14.pt')
     # clip_model =clip_model.cuda()
     img_encoder = clip_model.visual.cuda()
     # for name,param in img_encoder.named_parameters():
