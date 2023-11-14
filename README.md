@@ -1,6 +1,9 @@
 # train-CLIP 📎
 
 A PyTorch Lightning solution to training CLIP from both scratch and fine-tuning.
+
+### 注意：需要安装openAI的clip的依赖 https://github.com/openai/CLIP
+### 其他缺少的包版本请参照requirements.txt
  
 ## Usage 🚂
 
