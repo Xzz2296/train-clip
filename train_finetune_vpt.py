@@ -20,11 +20,14 @@ def main(hparams):
 
     # model = CustomCLIPWrapper(img_encoder, txt_encoder, hparams.minibatch_size, avg_word_embs=True)
     model = CLIPWrapper2(hparams.model_name, config, hparams.minibatch_size, model_path='ckpt/ViT-L-14.pt')
+    # model.model.enable_input_require_grads()
     dm = TextImageDataModule.from_argparse_args(hparams)
     no_smaller = [
-        'class_embedding', 'prompt_embedding'
+        'class_embedding', 'prompt_embedding', 'logits'
     ]
-    for n, p in model.model.visual.named_parameters():
+    for n, p in model.model.named_parameters():
+        if any(nd in n for nd in no_smaller):
+            print(n)
         if not any(nd in n for nd in no_smaller):
             # print(n)
             p.requires_grad = False

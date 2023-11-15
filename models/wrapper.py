@@ -589,7 +589,9 @@ class CLIPWrapper2(pl.LightningModule):
             text_tmp[self.global_rank][j * self.minibatch_size:(j + 1) * self.minibatch_size] = F.normalize(
                 self.model.encode_text(mb), dim=1)
             image_logits = torch.cat(ims) @ torch.cat(text_tmp).t() * self.model.logit_scale.exp()
+            image_logits.requires_grad =True
             loss = (F.cross_entropy(image_logits, ground_truth) + F.cross_entropy(image_logits.t(), ground_truth)) / 2
+            # loss.requires_grad = True
             # loss = (F.kl_div(torch.cat(txt), torch.cat(ims)) + F.kl_div(torch.cat(ims), torch.cat(txt))) / 2
             self.manual_backward(loss)
 
@@ -681,8 +683,8 @@ class CLIPWrapper2(pl.LightningModule):
             # 筛选requires_grad ==True
             # filter(lambda p: p.requires_grad, self.model.parameters()),
             # self.model.parameters(),
-            optimizer_grouped_parameters,
-            # grad_parameters,
+            # optimizer_grouped_parameters,
+            grad_parameters,
             # lr=lr,
             betas=(
                 0.9,
