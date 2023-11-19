@@ -266,11 +266,6 @@ class ResidualAttentionBlock2(nn.Module):
             ), dim=0)
 
         elif self.Deep and not self.last:
-            # x = torch.cat((
-            #             x[:, :1, :],
-            #             self.dropout(self.prompt_embeddings.expand(B, -1, -1)),
-            #             x[:, 1+self.num_tokens:, :]
-            #         ), dim=1)
             x = torch.cat((
                 x[:1, :, :],
                 # self.dropout(expand_prompt_embeddings+x[1:1+self.num_tokens, :, :]),

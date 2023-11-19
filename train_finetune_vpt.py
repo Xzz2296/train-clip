@@ -23,20 +23,25 @@ def main(hparams):
     # model.model.enable_input_require_grads()
     dm = TextImageDataModule.from_argparse_args(hparams)
     no_smaller = [
-        'class_embedding', 'prompt_embedding', 'logits'
+        'class_embedding', 'prompt_embedding', 'head'
     ]
-    for n, p in model.model.named_parameters():
-        if any(nd in n for nd in no_smaller):
-            print(n)
-        if not any(nd in n for nd in no_smaller):
-            # print(n)
-            p.requires_grad = False
+    # for n, p in model.model.named_parameters():
+    #     # print(n)
+    #     if any(nd in n for nd in no_smaller):
+    #         print(n)
+    #     if not any(nd in n for nd in no_smaller):
+    #         # print(n)
+    #         p.requires_grad = False
+
+    for n, p in model.model.transformer.named_parameters():
+        # print(p)
+        p.requires_grad =False
 
     gpu_nums = 7
     if platform.system() == 'Windows':
         gpu_nums = 1
 
-    trainer = Trainer.from_argparse_args(hparams, gpus=gpu_nums, precision=16, max_epochs=12)
+    trainer = Trainer.from_argparse_args(hparams, gpus=gpu_nums, precision=16, max_epochs=32)
     trainer.fit(model, dm)
 
 

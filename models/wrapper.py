@@ -211,7 +211,7 @@ class CLIPWrapper(pl.LightningModule):
         optimizer = torch.optim.AdamW(
             # 筛选requires_grad ==True
             # filter(lambda p: p.requires_grad, self.model.parameters()),
-            #self.model.parameters(),
+            # self.model.parameters(),
 
             optimizer_grouped_parameters,
             # grad_parameters,
@@ -495,7 +495,7 @@ class CLIPWrapper2(pl.LightningModule):
         self.model = CLIP(**config)
 
         self.model_path =model_path
-        if platform.system() == 'Linux':
+        if not model_path and platform.system() == 'Linux':
             self.model_path = '/workspace/DATA/xpj/model/ViT-L-14.pt'
         lst =self.model_path.split(".")
         if lst[-1] == 'pt':
@@ -589,7 +589,7 @@ class CLIPWrapper2(pl.LightningModule):
             text_tmp[self.global_rank][j * self.minibatch_size:(j + 1) * self.minibatch_size] = F.normalize(
                 self.model.encode_text(mb), dim=1)
             image_logits = torch.cat(ims) @ torch.cat(text_tmp).t() * self.model.logit_scale.exp()
-            image_logits.requires_grad =True
+            # image_logits.requires_grad = True
             loss = (F.cross_entropy(image_logits, ground_truth) + F.cross_entropy(image_logits.t(), ground_truth)) / 2
             # loss.requires_grad = True
             # loss = (F.kl_div(torch.cat(txt), torch.cat(ims)) + F.kl_div(torch.cat(ims), torch.cat(txt))) / 2
@@ -624,7 +624,7 @@ class CLIPWrapper2(pl.LightningModule):
             acc_t = (torch.argmax(image_logits, 0) == ground_truth).sum()
 
             # self.log('val_loss', loss)
-            self.log_dict({'val_loss': loss , 'val_acc': (acc_i + acc_t) / 2 / len(image) }, prog_bar=True)
+            self.log_dict({'val_loss': loss, 'val_acc': (acc_i + acc_t) / 2 / len(image) }, prog_bar=True)
 
     def forward(self, images, text):
         logits = F.normalize(self.model.encode_image(images), dim=1) @ F.normalize(self.model.encode_text(text), dim=1).t() * self.model.logit_scale.exp()
@@ -678,13 +678,19 @@ class CLIPWrapper2(pl.LightningModule):
 
             }
         ]
+        all_parameters = [
+            {
+                "params": model.named_parameters(),
+                "lr": lr/100,
+            }
+        ]
 
         optimizer = torch.optim.AdamW(
             # 筛选requires_grad ==True
             # filter(lambda p: p.requires_grad, self.model.parameters()),
             # self.model.parameters(),
-            # optimizer_grouped_parameters,
-            grad_parameters,
+            optimizer_grouped_parameters,
+            # grad_parameters,
             # lr=lr,
             betas=(
                 0.9,
