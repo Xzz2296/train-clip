@@ -1,13 +1,13 @@
 # Originally found in https://github.com/lucidrains/DALLE-pytorch
 from pathlib import Path
 from random import randint, choice
-
+import numpy as np
 import PIL
 import argparse
 import clip
 import torch
-import time
 
+import time
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms as T
 from pytorch_lightning import LightningDataModule
@@ -42,17 +42,25 @@ class TextImageDataset(Dataset):
         ]
         with open(train_val_file, 'r') as file:
             train_list = [line.strip() for line in file.readlines()]
-        # text_list =
         text_files = {text_file.stem: text_file for text_file in text_files if text_file.stem in train_list}
-        # text_files = {text_file.stem: text_file for text_file in text_files}
-        # text_files = {text_file: text_file for text_file in train_list}
         image_files = {image_file.stem: image_file for image_file in image_files if image_file.stem in train_list}
 
         keys = (image_files.keys() & text_files.keys())
 
+        self.npz_file_path = 'output.npz'
+        self.npz_data = None  # 不在初始化时加载数据
+        self.imgs = None
+        self.keys_npz = None
+        self.data_dict = None
+
+        # load_data = np.load('output.npz', allow_pickle=True,mmap_mode='r')
+        # imgs = load_data['data']
+        # keys = load_data['keys']
+        # data_dict = dict(zip(keys, imgs))
         self.keys = list(keys)
         self.text_files = {k: v for k, v in text_files.items() if k in keys}
         self.image_files = {k: v for k, v in image_files.items() if k in keys}
+        # self.image_files = data_dict
         self.resize_ratio = resize_ratio
         self.image_transform = T.Compose([
             T.Lambda(self.fix_img),
@@ -87,10 +95,9 @@ class TextImageDataset(Dataset):
         key = self.keys[ind]
 
         text_file = self.text_files[key]
-        image_file = self.image_files[key]
+        # image_file = self.image_files[key]
         # 添加 按utf-8方式编码
         t1 = time.time()
-
         descriptions = text_file.read_text(encoding='utf-8').split('\n')
         descriptions = list(filter(lambda t: len(t) > 0, descriptions))
         try:
@@ -99,23 +106,27 @@ class TextImageDataset(Dataset):
             print(f"An exception occurred trying to load file {text_file}.")
             print(f"Skipping index {ind}")
             return self.skip_sample(ind)
-        # b =description[0]
-        # a=len(description[0])
         tokenized_text = description if self.custom_tokenizer else clip.tokenize(description, truncate=True)[0]
         t2 = time.time()
 
+        if self.npz_data is None:
+            self.npz_data = np.load(self.npz_file_path, allow_pickle=True, mmap_mode='r')
+            self.imgs = self.npz_data['data']
+            self.keys_npz = self.npz_data['keys']
+            self.data_dict = dict(zip(self.keys_npz, self.imgs))
+
         try:
-            image_tensor = self.image_transform(PIL.Image.open(image_file))
+            image_np = self.data_dict[key]
+            image_tensor = torch.from_numpy(image_np)
+            # image_tensor = self.image_transform(PIL.Image.open(image_file))
         except (PIL.UnidentifiedImageError, OSError) as corrupt_image_exceptions:
-            print(f"An exception occurred trying to load file {image_file}.")
+            # print(f"An exception occurred trying to load file {image_file}.")
             print(f"Skipping index {ind}")
             return self.skip_sample(ind)
-
         t3 = time.time()
 
         print(f"text:{1000*(t2 -t1)}s")
         print(f"image:{1000*(t3- t2)}s")
-
         # Success
         return image_tensor, tokenized_text
 
