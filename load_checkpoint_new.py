@@ -27,7 +27,7 @@ def main():
     # 加载预训练的VIT模型请在CLIPWrapper2的参数中进行设置 如CLIPWrapper2('ViT-L/14', config, 8，model_path='ckpt/ViT-L-14.pt')
     model = CLIPWrapper2('ViT-L/14', config, 8).to(device)
     # 加载微调后的模型请在下方checkpoint处加载 model为封装后的clip模型, model.model为CLIP模型，model.model.model为VIT编码器
-    checkpoint = torch.load('ckpt/epoch=31-step=5823.ckpt')['state_dict']
+    checkpoint = torch.load('ckpt/epoch=31-step=4959.ckpt')['state_dict']
     model.load_state_dict(checkpoint)
     model.eval()
     with torch.no_grad():

@@ -25,6 +25,8 @@ def main():
     ])
     # 指定ckpt路径即可
     model = CLIPWrapper2('ViT-L/14', config, 8).to(device)
+    checkpoint = torch.load('ckpt/epoch=31-step=4959.ckpt')['state_dict']
+    model.load_state_dict(checkpoint)
     model.eval()
     with torch.no_grad():
         image = Image.open('test.jpg')
