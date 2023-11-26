@@ -10,7 +10,12 @@ A PyTorch Lightning solution to training CLIP from both scratch and fine-tuning.
 ---
 ### 如果要用train_finetune_vpt.py 请提前准备好数据集 
 
-格式：二级目录，一级目录为yourdataset,二级目录为img,text,npz,二级目录下的内容为各个类型的文件
+格式：二级目录，一级目录为yourdataset,二级目录为img,text,npz,二级目录下的内容为各个类型的文件 <br>
+为了加快训练的速度，先进行预处理保存为numpy文件 选择输入与输出路径即可 
+
+````
+python img2npz.py 
+````
 
 |-- yourdataset/ <br>
 |   |-- img/ <br>
