@@ -100,7 +100,7 @@ class TextImageDataset(Dataset):
             print(f"Skipping index {ind}")
             return self.skip_sample(ind)
         tokenized_text = description if self.custom_tokenizer else clip.tokenize(description, truncate=True)[0]
-        t2 = time.time()
+        #t2 = time.time()
 
         try:
             image_np = np.load(image_file_npz_path)['data']
@@ -110,10 +110,10 @@ class TextImageDataset(Dataset):
             # print(f"An exception occurred trying to load file {image_file}.")
             print(f"Skipping index {ind}")
             return self.skip_sample(ind)
-        t3 = time.time()
+        #t3 = time.time()
 
-        print(f"text:{1000*(t2 -t1)}s")
-        print(f"image:{1000*(t3- t2)}s")
+        # print(f"text:{1000*(t2 -t1)}s")
+        # print(f"image:{1000*(t3- t2)}s")
         # Success
         return image_tensor, tokenized_text
 
@@ -126,7 +126,8 @@ class TextImageDataModule(LightningDataModule):
                  image_size=224,
                  resize_ratio=0.75,
                  shuffle=False,
-                 custom_tokenizer=None
+                 custom_tokenizer=None,
+                 persistent_workers=False
                  ):
         """Create a text image datamodule from directories with congruent text and image names.
 
@@ -148,6 +149,7 @@ class TextImageDataModule(LightningDataModule):
         self.resize_ratio = resize_ratio
         self.shuffle = shuffle
         self.custom_tokenizer = custom_tokenizer
+        self.persistent_workers = persistent_workers
     
     @staticmethod
     def add_argparse_args(parent_parser):
@@ -159,6 +161,7 @@ class TextImageDataModule(LightningDataModule):
         parser.add_argument('--image_size', type=int, default=224, help='size of the images')
         parser.add_argument('--resize_ratio', type=float, default=0.75, help='minimum size of images during random crop')
         parser.add_argument('--shuffle', type=bool, default=False, help='whether to use shuffling during sampling')
+        parser.add_argument('--persistent_workers', type=bool, default=False, help='whether to use shuffling during sampling')
         return parser
     
     def setup(self, stage=None):
@@ -166,10 +169,10 @@ class TextImageDataModule(LightningDataModule):
         self.dataset2 = TextImageDataset(self.folder,train_val_file='val_set.txt', image_size=self.image_size,resize_ratio=self.resize_ratio,shuffle=self.shuffle,custom_tokenizer=not  self.custom_tokenizer is None)
     
     def train_dataloader(self):
-        return DataLoader(self.dataset, batch_size=self.batch_size, shuffle=self.shuffle, num_workers=self.num_workers, drop_last=True , collate_fn=self.dl_collate_fn)
+        return DataLoader(self.dataset, batch_size=self.batch_size, shuffle=self.shuffle, num_workers=self.num_workers, drop_last=True , collate_fn=self.dl_collate_fn,persistent_workers=self.persistent_workers)
 
     def val_dataloader(self):
-        return DataLoader(self.dataset2,batch_size=self.batch_size,shuffle=self.shuffle,num_workers=self.num_workers,drop_last=True , collate_fn=self.dl_collate_fn)
+        return DataLoader(self.dataset2,batch_size=self.batch_size,shuffle=self.shuffle,num_workers=self.num_workers,drop_last=True , collate_fn=self.dl_collate_fn,persistent_workers=self.persistent_workers)
     
     def dl_collate_fn(self, batch):
         if self.custom_tokenizer is None:

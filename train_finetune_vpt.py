@@ -8,6 +8,7 @@ from models import CustomCLIPWrapper, CLIPWrapper2
 from torchvision.models import resnet50, vit_l_16
 from transformers import AutoTokenizer, AutoModel
 import clip
+import os
 
 
 def main(hparams):

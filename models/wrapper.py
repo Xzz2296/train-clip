@@ -481,7 +481,7 @@ class CLIPWrapper2(pl.LightningModule):
                  model_name: str,
                  config: dict,
                  minibatch_size: int,
-                 model_path: str
+                 model_path: str =None # 默认为空
                  ):
         """A lightning wrapper for a CLIP model as specified in the paper.
 
@@ -494,18 +494,21 @@ class CLIPWrapper2(pl.LightningModule):
         self.model_name = model_name
         self.model = CLIP(**config)
 
-        self.model_path =model_path
-        if not model_path and platform.system() == 'Linux':
+        self.model_path = model_path
+        if (model_path is not None) and platform.system() == 'Linux':
             self.model_path = '/workspace/DATA/xpj/model/ViT-L-14.pt'
-        lst =self.model_path.split(".")
-        if lst[-1] == 'pt':
-            pretrained_model = torch.jit.load(self.model_path,map_location="cpu")
-            # self.model, process = clip.load('ckpt/ViT-L-14.pt')
-            self.model.load_state_dict(pretrained_model.state_dict(), strict=False)
-        elif lst[-1] == 'ckpt':
-            pretrained_model = torch.load(self.model_path,map_location='cpu')
-            self.model.load_state_dict(pretrained_model,strict=False)
-        else: assert lst[-1]== 'pt' or lst[-1]=='ckpt'
+
+        elif model_path is not None:
+            lst = self.model_path.split(".")
+            if lst[-1] == 'pt':
+                pretrained_model = torch.jit.load(self.model_path,map_location="cpu")
+                # self.model, process = clip.load('ckpt/ViT-L-14.pt')
+                self.model.load_state_dict(pretrained_model.state_dict(), strict=False)
+            elif lst[-1] == 'ckpt':
+                raise ValueError("ckpt 保存的是clipwrapper模型，请到train.py/load.py中加载")
+            else:
+                if lst[-1] not in ['pt', 'ckpt']:
+                    raise ValueError(f"意外的文件扩展名: {lst[-1]}。期望是 'pt' 或 'ckpt'。")
         self.minibatch_size = minibatch_size
         self.isViT = 'ViT' in self.model_name
 
@@ -595,7 +598,7 @@ class CLIPWrapper2(pl.LightningModule):
             # loss = (F.kl_div(torch.cat(txt), torch.cat(ims)) + F.kl_div(torch.cat(ims), torch.cat(txt))) / 2
             self.manual_backward(loss)
 
-        accumulate = True
+        accumulate = False
         if not accumulate:
             optimizer.step()
             optimizer.zero_grad()
