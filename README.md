@@ -4,8 +4,34 @@ A PyTorch Lightning solution to training CLIP from both scratch and fine-tuning.
 
 ### 注意：需要安装openAI的clip的依赖 https://github.com/openai/CLIP
 ### 其他缺少的包版本请参照requirements.txt
-### 预训练权重(.ckpt文件）请从24服务器下载，速度更快： /workspace/DATA/xpj/model/
-### 加载预训练权重请参考load_chekpoint.py
+### 预训练权重(.ckpt文件）请从24服务器下载，速度更快： /workspace/DATA/xpj/model/ 在46服务器也存放了模型权重：/workspace/xpj/model/
+### 加载预训练权重请参考load_chekpoint.py 或 load_chekpoint_new.py 内容一样的 注意预训练模型和微调模型加载方式不同，一个是CLIP 一个是CLIPWrapper
+
+---
+### 如果要用train_finetune_vpt.py 请提前准备好数据集 
+
+格式：二级目录，一级目录为yourdataset,二级目录为img,text,npz,二级目录下的内容为各个类型的文件
+
+|-- yourdataset/ <br>
+|   |-- img/ <br>
+|   |   |-- image1.jpg <br>
+|   |   |-- image2.jpg <br>
+|   |   |-- ... <br>
+|   |-- text/ <br>
+|   |   |-- text1.txt <br>
+|   |   |-- text2.txt <br>
+|   |   |-- ... <br>
+|   |-- npz/ <br>
+|   |   |-- data1.npz <br>
+|   |   |-- data2.npz <br>
+|   |   |-- ... <br>
+
+运行命令<br>
+````
+python train_finetune_vpt.py --model_name ViT-L/14 --folder /your/dataset/folder/ --batch_size 26
+````
+
+---
 
 ---
 ## Usage 🚂
