@@ -1,4 +1,5 @@
 import torch
+import torch.nn as nn
 from torchvision import transforms as T
 import yaml
 from PIL import Image
@@ -24,17 +25,19 @@ def main():
         T.Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711))
     ])
     # 指定ckpt路径即可
-    model = CLIPWrapper2('ViT-L/14', config, 8).to(device)
+    model = CLIPWrapper2('ViT-L/14', config, minibatch_size=8).to(device)
     checkpoint = torch.load('ckpt/epoch=31-step=4959.ckpt')['state_dict']
     model.load_state_dict(checkpoint)
     model.eval()
+    linear_layer=nn.Linear(768, 512).to(device)  # 全连接层
     with torch.no_grad():
         image = Image.open('test.jpg')
         image = transform(image).to(device)
         # 仅使用CLIP模型的视觉部分 即ViT
-        feature = model.model.encode_image(image)
+        feature_origin = model.model.encode_image(image)
         # 特征形状为n*768 ,n为送入图像的数量
-        print(feature)
+        feature = linear_layer(feature_origin)
+        print(feature.size)
 
 
 if __name__ == '__main__':
