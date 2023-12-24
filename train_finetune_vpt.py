@@ -24,15 +24,15 @@ def main(hparams):
     # model.model.enable_input_require_grads()
     dm = TextImageDataModule.from_argparse_args(hparams)
     no_smaller = [
-        'class_embedding', 'prompt_embedding', 'head'
+        'class_embedding', 'prompt_embedding'
     ]
-    # for n, p in model.model.named_parameters():
-    #     # print(n)
-    #     if any(nd in n for nd in no_smaller):
-    #         print(n)
-    #     if not any(nd in n for nd in no_smaller):
-    #         # print(n)
-    #         p.requires_grad = False
+    for n, p in model.model.named_parameters():
+        # print(n)
+        if any(nd in n for nd in no_smaller):
+            print(n)
+        if not any(nd in n for nd in no_smaller):
+            # print(n)
+            p.requires_grad = False
 
     for n, p in model.model.transformer.named_parameters():
         # print(p)

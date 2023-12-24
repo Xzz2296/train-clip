@@ -648,14 +648,6 @@ class CLIPWrapper2(pl.LightningModule):
         lr =lr
 
         model = self.model
-        # Rmax = 10
-        # if self.model_name == "ViT-L/14":
-        #     Rmax = 23
-
-        # no_smaller = [
-        #     # 'model.visual.prompt_embeddings',
-        #     # 'model.visual.transformer.prompt_embeddings',
-        #     'model.visual.class_embedding']+[f"model.visual.transformer.resblocks.{i}.prompt_embeddings" for i in range(0, Rmax)]
 
         no_smaller = [
             'class_embedding', 'prompt_embedding'

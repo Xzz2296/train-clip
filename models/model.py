@@ -339,7 +339,7 @@ class VisualTransformer(nn.Module):
     def __init__(self, input_resolution: int, patch_size: int, width: int, layers: int, heads: int, output_dim: int):
         super().__init__()
         self.input_resolution = input_resolution
-        self.embedding_dim = 768
+        # self.embedding_dim = 768
         self.conv1 = nn.Conv2d(in_channels=3, out_channels=width, kernel_size=patch_size, stride=patch_size, bias=False)
         # 定义插入的token个数
         # self.num_tokens =2
