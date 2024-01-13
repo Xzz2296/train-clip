@@ -592,7 +592,7 @@ class CLIPWrapper2(pl.LightningModule):
             text_tmp[self.global_rank][j * self.minibatch_size:(j + 1) * self.minibatch_size] = F.normalize(
                 self.model.encode_text(mb), dim=1)
             image_logits = torch.cat(ims) @ torch.cat(text_tmp).t() * self.model.logit_scale.exp()
-            # image_logits.requires_grad = True
+            image_logits.requires_grad = True
             loss = (F.cross_entropy(image_logits, ground_truth) + F.cross_entropy(image_logits.t(), ground_truth)) / 2
             # loss.requires_grad = True
             # loss = (F.kl_div(torch.cat(txt), torch.cat(ims)) + F.kl_div(torch.cat(ims), torch.cat(txt))) / 2
@@ -602,8 +602,9 @@ class CLIPWrapper2(pl.LightningModule):
         if not accumulate:
             optimizer.step()
             optimizer.zero_grad()
-            lr_scheduler = self.lr_schedulers()
-            lr_scheduler.step()
+            # 关闭学习率调度器
+            # lr_scheduler = self.lr_schedulers()
+            # lr_scheduler.step()
             self.model.logit_scale.data.clamp_(-np.log(100), np.log(100))
 
         # grad_accumulation
@@ -612,8 +613,8 @@ class CLIPWrapper2(pl.LightningModule):
             if (idx + 1) % N == 0:
                 optimizer.step()
                 optimizer.zero_grad()
-                lr_scheduler = self.lr_schedulers()
-                lr_scheduler.step()
+                # lr_scheduler = self.lr_schedulers()
+                # lr_scheduler.step()
                 self.model.logit_scale.data.clamp_(-np.log(100), np.log(100))
 
     def validation_step(self, val_batch, idx):
@@ -707,4 +708,6 @@ class CLIPWrapper2(pl.LightningModule):
             warmup_steps=2000
         )
 
-        return {'optimizer': optimizer, 'lr_scheduler': lr_scheduler}
+        # return {'optimizer': optimizer, 'lr_scheduler': lr_scheduler}
+        return {'optimizer': optimizer}
+

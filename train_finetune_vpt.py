@@ -5,6 +5,7 @@ from argparse import ArgumentParser
 from pytorch_lightning import Trainer
 from data.text_image_dm_new_np import TextImageDataModule
 from models import CustomCLIPWrapper, CLIPWrapper2
+from pytorch_lightning.callbacks import ModelCheckpoint
 from torchvision.models import resnet50, vit_l_16
 from transformers import AutoTokenizer, AutoModel
 import clip
@@ -42,7 +43,20 @@ def main(hparams):
     if platform.system() == 'Windows':
         gpu_nums = 1
 
-    trainer = Trainer.from_argparse_args(hparams, gpus=gpu_nums, precision=16, max_epochs=32)
+    # 创建 ModelCheckpoint 回调
+    checkpoint_callback = ModelCheckpoint(
+        dirpath=hparams.default_root_dir,  # 保存路径
+        filename='model-{epoch:02d}-{val_loss:.2f}',  # 文件名格式
+        monitor='val_loss',  # 监控的指标
+        mode='min',  # 模式（min 表示监控指标越小越好）
+        save_top_k=1,  # 保存最好的几个模型
+    )
+
+    trainer = Trainer.from_argparse_args(hparams,
+                                         gpus=gpu_nums,
+                                         precision=16,
+                                         max_epochs=32,
+                                         callbacks=checkpoint_callback)
     trainer.fit(model, dm)
 
 
