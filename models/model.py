@@ -227,7 +227,7 @@ class ResidualAttentionBlock2(nn.Module):
         self.patch = 14
         # self.head =d_model
         self.embed_dim = d_model
-        self.num_tokens = 20
+        self.num_tokens = 50
         self.first = first_layer
         self.last = last_layer
         self.dropout = nn.Dropout(p=0.2)
