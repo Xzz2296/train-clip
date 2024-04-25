@@ -21,6 +21,7 @@ def main(hparams):
         hparams.minibatch_size = hparams.batch_size
 
     # model = CustomCLIPWrapper(img_encoder, txt_encoder, hparams.minibatch_size, avg_word_embs=True)
+    rs_vit_path = 'ckpt/ViT-L-14.pt'
     model = CLIPWrapper2(hparams.model_name, config, hparams.minibatch_size, model_path='ckpt/ViT-L-14.pt')
     # model.model.enable_input_require_grads()
     dm = TextImageDataModule.from_argparse_args(hparams)

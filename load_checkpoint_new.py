@@ -6,7 +6,7 @@ from PIL import Image
 from models import CLIPWrapper2
 from data.text_image_dm_new import TextImageDataset
 import torchvision
-
+from Visualizer_main.visualizer import get_local
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 image_folder = r'E:\xpj\dataset\clip_test'
@@ -38,15 +38,18 @@ def main():
     # linux下可使用多线程读取数据
     # dataloader = torch.utils.data.DataLoader(dataset, batch_size=2, shuffle=True, num_workers=4)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=2, shuffle=True)
-
+    vitmodel =model.model.visual
     # linear_layer = nn.Linear(768, 512).to(device)  # 全连接层
     with torch.no_grad():
         inputs, labels = next(iter(dataloader))
         inputs = inputs.to(device)
         # 使用模型对输入进行编码,输出形状为（batch_size, embedding_dim） 即batch_size个 cls token
-        outputs = model(inputs)
+        outputs = vitmodel(inputs)
         # 将outputs 切分成batch_size个样本
         outputs = torch.split(outputs, 1, dim=0)
+        print(outputs[0].shape)
+        cache =get_local.cache
+        print(cache)
 
 
 if __name__ == '__main__':

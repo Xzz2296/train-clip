@@ -1,8 +1,12 @@
 # Description: load vision transformer model and use it to encode images
+from Visualizer_main.visualizer import get_local
+get_local.activate()
 from functools import partial
 import torch
 import torch.nn as nn
+
 import timm.models.vision_transformer
+# import Visualizer_main.timm.models.vision_transformer
 import torchvision
 from torchvision import transforms
 
@@ -72,7 +76,7 @@ dataset = torchvision.datasets.ImageFolder(image_folder, transform=transform)
 # linux下可使用多线程读取数据
 # dataloader = torch.utils.data.DataLoader(dataset, batch_size=2, shuffle=True, num_workers=4)
 dataloader = torch.utils.data.DataLoader(dataset, batch_size=2, shuffle=True)
-
+get_local.clear()
 with torch.no_grad():
     # 读取一个batch的数据
     inputs, labels = next(iter(dataloader))
@@ -81,6 +85,9 @@ with torch.no_grad():
     outputs = model(inputs)
     # 将outputs 切分成batch_size个样本
     outputs = torch.split(outputs, 1, dim=0)
+    cache = get_local.cache
+    print(list(cache.keys()))
+    print(cache)
 
 
 print(outputs)
