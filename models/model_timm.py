@@ -10,6 +10,7 @@ from functools import partial, reduce
 from operator import mul
 import torch.nn.functional as F
 from torch import nn
+from timm.models.vision_transformer_vpt import vit_base_patch16_224
 
 
 class Bottleneck(nn.Module):
@@ -172,14 +173,6 @@ class QuickGELU(nn.Module):
 class ResidualAttentionBlock(nn.Module):
     def __init__(self, d_model: int, n_head: int, attn_mask: typing.Optional[torch.Tensor] = None):
         super().__init__()
-        # self.Deep = deep
-        # if deep and not last_layer:
-        #     self.dropout = nn.Dropout(p=0.2)
-        #     # 每个 ResidualAttentionBlock 都会在后面的前向传播中被逐一执行，共执行 layers 次
-        #     val = math.sqrt(6. / float(3 * reduce(mul, [self.patch,self.patch], 1) + self.embed_dim))  # noqa
-        #     self.prompt_embeddings = nn.Parameter(torch.zeros(
-        #                  self.num_tokens, self.embed_dim), requires_grad=True)
-        #     nn.init.uniform_(self.prompt_embeddings.data, -val, val)
 
         self.attn = nn.MultiheadAttention(d_model, n_head)
         self.ln_1 = LayerNorm(d_model)
@@ -196,23 +189,6 @@ class ResidualAttentionBlock(nn.Module):
         return self.attn(x, x, x, need_weights=False, attn_mask=self.attn_mask)[0]
 
     def forward(self, x: torch.Tensor):
-        # B = x.size()[1] # X[patch ** 2+1, Batch , width]
-        # # 将prompt embedding 进行了拓展，第一个维度拓展到batch大小
-        # expand_prompt_embeddings = self.prompt_embeddings.expand(B, -1, -1).permute(1, 0, 2)
-        # if self.count > 0:
-        #     # x = torch.cat((
-        #     #             x[:, :1, :],
-        #     #             self.dropout(self.prompt_embeddings.expand(B, -1, -1)),
-        #     #             x[:, 1+self.num_tokens:, :]
-        #     #         ), dim=1)
-        #     # deep prompt embedding 还有问题
-        #     x = torch.cat((
-        #                 x[:1, :, :],
-        #                 self.dropout(expand_prompt_embeddings),
-        #                 # self.dropout(self.prompt_embeddings.expand(-1, B, -1)),
-        #                 x[1:, :, :]
-        #             ), dim=0)
-        # self.count += 1
         x = x + self.attention(self.ln_1(x))
         x = x + self.mlp(self.ln_2(x))
         return x
@@ -235,8 +211,7 @@ class ResidualAttentionBlock2(nn.Module):
         val = math.sqrt(6. / float(3 * reduce(mul, [self.patch, self.patch], 1) + self.embed_dim))  # noqa
         self.prompt_embeddings = nn.Parameter(torch.zeros(
             self.num_tokens, self.embed_dim), requires_grad=True)
-        # nn.init.uniform_(self.prompt_embeddings.data, -val, val)
-        nn.init.xavier_uniform_(self.prompt_embeddings)
+        nn.init.uniform_(self.prompt_embeddings.data, -val, val)
         # if self.Deep and not self.last:
 
         self.attn = nn.MultiheadAttention(d_model, n_head)
@@ -257,7 +232,7 @@ class ResidualAttentionBlock2(nn.Module):
         B = x.size()[1]  # X[patch ** 2+1, Batch , width]
         # 将prompt embedding 进行了拓展，第一个维度拓展到batch大小
         expand_prompt_embeddings = self.prompt_embeddings.expand(B, -1, -1).permute(1, 0, 2)
-        # 第一个块只添加不替换，后面的是进行替换
+        # 这里还有问题 第一个块只添加不替换，后面的是进行替换
         if self.first:
             x = torch.cat((
                 x[:1, :, :],
@@ -342,12 +317,6 @@ class VisualTransformer(nn.Module):
         self.input_resolution = input_resolution
         # self.embedding_dim = 768
         self.conv1 = nn.Conv2d(in_channels=3, out_channels=width, kernel_size=patch_size, stride=patch_size, bias=False)
-        # 定义插入的token个数
-        # self.num_tokens =2
-        # self.num_layers =12 #vit-b:12 vit-l:24
-        # self.deep = False
-        # self.count = 0
-        # self.dropout =nn.Dropout(p=0.1)
         scale = width ** -0.5
         self.class_embedding = nn.Parameter(scale * torch.randn(width))
         self.positional_embedding = nn.Parameter(scale * torch.randn((input_resolution // patch_size) ** 2 + 1, width))
@@ -357,15 +326,6 @@ class VisualTransformer(nn.Module):
 
         self.ln_post = LayerNorm(width)
         self.proj = nn.Parameter(scale * torch.randn(width, output_dim))
-        # # insert Prompt moudle 初始化
-        # # initiate prompt:
-        # val = math.sqrt(6. / float(3 * reduce(mul, [patch_size,patch_size], 1) + output_dim))  # noqa
-        # num_tokens =self.num_tokens
-        # # num_layers =self.num_layers
-        # # 设置require_grad=True,保证这个参数可以被更新
-        # self.prompt_embeddings = nn.Parameter(torch.zeros(
-        #             1, num_tokens, self.embedding_dim), requires_grad=True)
-        # nn.init.uniform_(self.prompt_embeddings.data, -val, val)
 
     def forward(self, x: torch.Tensor):
         # 输入层的前向传播 ，而不是所有层的前向传播
@@ -379,17 +339,6 @@ class VisualTransformer(nn.Module):
             [self.class_embedding.to(x.dtype) + torch.zeros(x.shape[0], 1, x.shape[-1], dtype=x.dtype, device=x.device),
              x], dim=1)  # shape = [*, grid ** 2 + 1, width]
         x = x + self.positional_embedding.to(x.dtype)
-        # 添加位置信息在 cat拼接之前
-        # B 即batch大小，是开始时输入的参数
-        # B = x.shape[0]
-        # # 将CLS PROMPT 和普通token拼接起来，使用的是nn中的dropout
-        #
-        # if self.count==0:
-        #     x = torch.cat((
-        #                 x[:,:1,:],
-        #                 self.dropout(self.prompt_embeddings.expand(B,-1,-1)),
-        #                 x[:,1:,:]
-        #     ),dim=1)
         x = self.ln_pre(x)
 
         x = x.permute(1, 0, 2)  # NLD -> LND  
@@ -398,8 +347,8 @@ class VisualTransformer(nn.Module):
         # 取分类头 第0个向量
         x = self.ln_post(x[:, 0, :])
         # 做投影
-        if self.proj is not None:
-            x = x @ self.proj
+        # if self.proj is not None:
+        #     x = x @ self.proj
 
         return x
 
@@ -434,14 +383,15 @@ class CLIP(nn.Module):
             )
         else:
             vision_heads = vision_width // 64
-            self.visual = VisualTransformer(
-                input_resolution=image_resolution,
-                patch_size=vision_patch_size,
-                width=vision_width,
-                layers=vision_layers,
-                heads=vision_heads,
-                output_dim=embed_dim
-            )
+            # self.visual = VisualTransformer(
+            #     input_resolution=image_resolution,
+            #     patch_size=vision_patch_size,
+            #     width=vision_width,
+            #     layers=vision_layers,
+            #     heads=vision_heads,
+            #     output_dim=embed_dim
+            # )
+            self.visual = vit_base_patch16_224(pretrained=False, num_classes=embed_dim)
 
         self.transformer = Transformer(
             width=transformer_width,
@@ -499,7 +449,9 @@ class CLIP(nn.Module):
 
     @property
     def dtype(self):
-        return self.visual.conv1.weight.dtype
+        # return self.visual.conv1.weight.dtype
+        # return self.visual.dtype
+        return self.transformer.resblocks[0].attn.in_proj_weight.dtype
 
     def encode_image(self, image):
         # result =self.visual(image.type(torch.float32))

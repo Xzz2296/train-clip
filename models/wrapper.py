@@ -11,7 +11,8 @@ import copy
 import clip
 import platform
 from cosine_annealing_warmup import CosineAnnealingWarmupRestarts
-from .model import CLIP
+from .model_timm import CLIP
+# from .model import CLIP
 #from .model_old import CLIP
 
 
@@ -502,8 +503,13 @@ class CLIPWrapper2(pl.LightningModule):
             lst = self.model_path.split(".")
             if lst[-1] == 'pt':
                 pretrained_model = torch.jit.load(self.model_path,map_location="cpu")
+                checkpoint = torch.load(r'E:\xpj\models\rsvit\vit-b-checkpoint-1599.pth', map_location='cpu')['model']
+                
+                # self.model.load_state_dict(checkpoint, strict=False)
                 # self.model, process = clip.load('ckpt/ViT-L-14.pt')
-                self.model.load_state_dict(pretrained_model.state_dict(), strict=False)
+                # self.model.load_state_dict(pretrained_model.state_dict(), strict=False)
+                self.model.load_state_dict(pretrained_model.state_dict(),strict=False)
+                # self.model.visual.load_state_dict(checkpoint,strict=False)
             elif lst[-1] == 'ckpt':
                 raise ValueError("ckpt 保存的是clipwrapper模型，请到train.py/load.py中加载")
             else:
@@ -582,6 +588,8 @@ class CLIPWrapper2(pl.LightningModule):
                 self.model.encode_image(mb), dim=1)
             image_logits = torch.cat(images_tmp) @ torch.cat(txt).t() * self.model.logit_scale.exp()
             ground_truth = torch.arange(len(image_logits)).long().to(image_logits.device)
+            print(image_logits.requires_grad)
+            print(ground_truth.requires_grad)
             loss = (F.cross_entropy(image_logits, ground_truth) + F.cross_entropy(image_logits.t(), ground_truth)) / 2
             # loss = (F.kl_div(torch.cat(txt), torch.cat(ims)) + F.kl_div(torch.cat(ims), torch.cat(txt))) / 2
             self.manual_backward(loss)

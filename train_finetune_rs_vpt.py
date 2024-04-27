@@ -6,10 +6,8 @@ from pytorch_lightning import Trainer
 from data.text_image_dm_new_np import TextImageDataModule
 from models import CustomCLIPWrapper, CLIPWrapper2
 from pytorch_lightning.callbacks import ModelCheckpoint
-from torchvision.models import resnet50, vit_l_16
 from transformers import AutoTokenizer, AutoModel
-import clip
-import os
+
 
 
 def main(hparams):
@@ -26,7 +24,7 @@ def main(hparams):
     # model.model.enable_input_require_grads()
     dm = TextImageDataModule.from_argparse_args(hparams)
     no_smaller = [
-        'class_embedding', 'prompt_embedding','cls_token'
+        'class_embedding', 'prompt_embedding','cls_token',''
     ]
     for n, p in model.model.named_parameters():
         # print(n)
