@@ -172,15 +172,6 @@ class QuickGELU(nn.Module):
 class ResidualAttentionBlock(nn.Module):
     def __init__(self, d_model: int, n_head: int, attn_mask: typing.Optional[torch.Tensor] = None):
         super().__init__()
-        # self.Deep = deep
-        # if deep and not last_layer:
-        #     self.dropout = nn.Dropout(p=0.2)
-        #     # 每个 ResidualAttentionBlock 都会在后面的前向传播中被逐一执行，共执行 layers 次
-        #     val = math.sqrt(6. / float(3 * reduce(mul, [self.patch,self.patch], 1) + self.embed_dim))  # noqa
-        #     self.prompt_embeddings = nn.Parameter(torch.zeros(
-        #                  self.num_tokens, self.embed_dim), requires_grad=True)
-        #     nn.init.uniform_(self.prompt_embeddings.data, -val, val)
-
         self.attn = nn.MultiheadAttention(d_model, n_head)
         self.ln_1 = LayerNorm(d_model)
         self.mlp = nn.Sequential(OrderedDict([
@@ -196,23 +187,6 @@ class ResidualAttentionBlock(nn.Module):
         return self.attn(x, x, x, need_weights=False, attn_mask=self.attn_mask)[0]
 
     def forward(self, x: torch.Tensor):
-        # B = x.size()[1] # X[patch ** 2+1, Batch , width]
-        # # 将prompt embedding 进行了拓展，第一个维度拓展到batch大小
-        # expand_prompt_embeddings = self.prompt_embeddings.expand(B, -1, -1).permute(1, 0, 2)
-        # if self.count > 0:
-        #     # x = torch.cat((
-        #     #             x[:, :1, :],
-        #     #             self.dropout(self.prompt_embeddings.expand(B, -1, -1)),
-        #     #             x[:, 1+self.num_tokens:, :]
-        #     #         ), dim=1)
-        #     # deep prompt embedding 还有问题
-        #     x = torch.cat((
-        #                 x[:1, :, :],
-        #                 self.dropout(expand_prompt_embeddings),
-        #                 # self.dropout(self.prompt_embeddings.expand(-1, B, -1)),
-        #                 x[1:, :, :]
-        #             ), dim=0)
-        # self.count += 1
         x = x + self.attention(self.ln_1(x))
         x = x + self.mlp(self.ln_2(x))
         return x
@@ -225,7 +199,6 @@ class ResidualAttentionBlock2(nn.Module):
         super().__init__()
         self.Deep = deep
         self.patch = 14
-        # self.head =d_model
         self.embed_dim = d_model
         self.num_tokens = 50
         self.first = first_layer

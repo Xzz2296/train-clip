@@ -3,8 +3,9 @@ import platform
 import yaml
 from argparse import ArgumentParser
 from pytorch_lightning import Trainer
-from data.text_image_dm_new_np import TextImageDataModule
-from models import CustomCLIPWrapper, CLIPWrapper2
+from data.text_image_dm_new_np_rs import TextImageDataModule
+# from models import CustomCLIPWrapper, CLIPWrapper2
+from models.wrapper_timm import CLIPWrapper2
 from pytorch_lightning.callbacks import ModelCheckpoint
 from transformers import AutoTokenizer, AutoModel
 

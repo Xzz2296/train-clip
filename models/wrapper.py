@@ -11,8 +11,8 @@ import copy
 import clip
 import platform
 from cosine_annealing_warmup import CosineAnnealingWarmupRestarts
-from .model_timm import CLIP
-# from .model import CLIP
+# from .model_timm import CLIP
+from .model import CLIP
 #from .model_old import CLIP
 
 
@@ -509,7 +509,7 @@ class CLIPWrapper2(pl.LightningModule):
                 # self.model, process = clip.load('ckpt/ViT-L-14.pt')
                 # self.model.load_state_dict(pretrained_model.state_dict(), strict=False)
                 self.model.load_state_dict(pretrained_model.state_dict(),strict=False)
-                # self.model.visual.load_state_dict(checkpoint,strict=False)
+                self.model.visual.load_state_dict(checkpoint,strict=False)
             elif lst[-1] == 'ckpt':
                 raise ValueError("ckpt 保存的是clipwrapper模型，请到train.py/load.py中加载")
             else:
