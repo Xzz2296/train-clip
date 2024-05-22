@@ -7,6 +7,7 @@ A PyTorch Lightning solution to training CLIP from both scratch and fine-tuning.
 ### 预训练权重(.ckpt文件）请从24服务器下载，速度更快： /workspace/DATA/xpj/model/ 在46服务器也存放了模型权重：/workspace/xpj/model/
 ### 加载预训练权重请参考load_chekpoint_new.py 内容一样的 注意预训练模型和微调模型加载方式不同，一个是CLIP 一个是CLIPWrapper
 ### 加载预训练VIT模型请参考load_rs_vit.py 是基于timm库的Vision Transformer
+### 加载vpt微调后的VIT请参考load_rs_vpt.py 但是要基于修改后的timm包来工作，方便起见，请直接拷贝该目录下的文件夹
 
 ---
 
