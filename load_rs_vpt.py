@@ -1,5 +1,5 @@
 # Description: load vision transformer model and use it to encode images
-from Visualizer_main.visualizer import get_local
+# from Visualizer_main.visualizer import get_local
 from functools import partial
 import torch
 import torch.nn as nn

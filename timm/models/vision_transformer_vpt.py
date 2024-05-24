@@ -35,7 +35,7 @@ from timm.data import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD, IMAGENET_INCE
 from .helpers import build_model_with_cfg, named_apply, adapt_input_conv
 from .layers import PatchEmbed, Mlp, DropPath, trunc_normal_, lecun_normal_
 from .registry import register_model
-from visualizer import get_local
+# from visualizer import get_local
 
 _logger = logging.getLogger(__name__)
 
@@ -187,7 +187,7 @@ class Attention(nn.Module):
         self.proj = nn.Linear(dim, dim)
         self.proj_drop = nn.Dropout(proj_drop)
 
-    @get_local('attn')
+    # @get_local('attn')
     def forward(self, x):
         B, N, C = x.shape
         qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
