@@ -2,7 +2,23 @@
 
 A PyTorch Lightning solution to training CLIP from both scratch and fine-tuning.
 
-### 注意：需要安装openAI的clip的依赖 https://github.com/openai/CLIP
+### Quick Start：
+#### 1.安装openAI的clip的依赖 https://github.com/openai/CLIP
+```bash
+$ conda install --yes -c pytorch pytorch=1.7.1 torchvision cudatoolkit=11.0
+$ pip install ftfy regex tqdm
+$ pip install git+https://github.com/openai/CLIP.git
+```
+
+#### 2.安装余弦退火包
+```bash
+$ pip install 'git+https://github.com/katsura-jp/pytorch-cosine-annealing-with-warmup'
+```
+
+#### 3.安装其他requirements
+```bash
+$ pip install -r requirements.txt
+```
 ### 其他缺少的包版本请参照requirements.txt
 ### 预训练权重(.ckpt文件）请从24服务器下载，速度更快： /workspace/DATA/xpj/model/ 在46服务器也存放了模型权重：/workspace/xpj/model/
 ### 加载预训练权重请参考load_chekpoint_new.py 内容一样的 注意预训练模型和微调模型加载方式不同，一个是CLIP 一个是CLIPWrapper
